@@ -1,0 +1,191 @@
+<template>
+  <div class="page-container">
+    <div class="page-header">
+      <div class="page-header-left">
+        <div class="page-header-icon" style="background:linear-gradient(135deg,#fa8c16,#d46b08)">
+          <el-icon><OfficeBuilding /></el-icon>
+        </div>
+        <div>
+          <div class="page-header-title">供应商管理</div>
+          <div class="page-header-sub">管理采购供应商信息与合作条款</div>
+        </div>
+      </div>
+      <el-button type="primary" @click="openDialog()">
+        <el-icon><Plus /></el-icon>新增供应商
+      </el-button>
+    </div>
+
+    <div class="search-card">
+      <el-form inline @submit.prevent="loadData">
+        <el-form-item label="关键词">
+          <el-input v-model="query.search" placeholder="编码/名称/联系人" clearable style="width:220px" />
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="loadData"><el-icon><Search /></el-icon>查询</el-button>
+          <el-button @click="() => { query.search = ''; loadData() }">重置</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <div class="table-card">
+      <div class="table-toolbar">
+        <span class="table-toolbar-title">供应商列表</span>
+        <el-tag effect="light" type="info">共 {{ total }} 条</el-tag>
+      </div>
+      <el-table :data="list" v-loading="loading" stripe>
+        <el-table-column prop="supplier_code" label="编码" width="120">
+          <template #default="{ row }">
+            <el-tag effect="light" type="warning" size="small">{{ row.supplier_code }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="supplier_name" label="供应商名称" min-width="160" />
+        <el-table-column prop="contact_person" label="联系人" width="100" />
+        <el-table-column prop="contact_phone" label="联系电话" width="140" />
+        <el-table-column prop="payment_terms" label="付款条件" width="120" />
+        <el-table-column prop="status" label="状态" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag effect="light" :type="row.status ? 'success' : 'danger'" size="small">
+              {{ row.status ? '启用' : '禁用' }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="120" fixed="right">
+          <template #default="{ row }">
+            <div class="action-btns">
+              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <el-divider direction="vertical" />
+              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="table-pagination">
+        <el-pagination v-model:current-page="query.page" v-model:page-size="query.page_size"
+          :total="total" layout="total, sizes, prev, pager, next" @change="loadData" />
+      </div>
+    </div>
+
+    <el-dialog v-model="dialogVisible" :title="form.id ? '编辑供应商' : '新增供应商'"
+      width="600px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" class="dialog-form">
+        <el-row :gutter="16">
+          <el-col :span="12">
+            <el-form-item label="供应商编码" prop="supplier_code">
+              <el-input v-model="form.supplier_code" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="供应商名称" prop="supplier_name">
+              <el-input v-model="form.supplier_name" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="联系人">
+              <el-input v-model="form.contact_person" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="联系电话">
+              <el-input v-model="form.contact_phone" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="邮箱">
+              <el-input v-model="form.email" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="付款条件">
+              <el-input v-model="form.payment_terms" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="税号">
+              <el-input v-model="form.tax_no" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="开户银行">
+              <el-input v-model="form.bank_name" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="24">
+            <el-form-item label="地址">
+              <el-input v-model="form.address" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </el-form>
+      <template #footer>
+        <el-button @click="dialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, reactive, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import http from '@/utils/http'
+
+const loading = ref(false)
+const saving = ref(false)
+const list = ref([])
+const total = ref(0)
+const dialogVisible = ref(false)
+const formRef = ref()
+const form = ref({})
+const query = reactive({ search: '', page: 1, page_size: 20 })
+const rules = {
+  supplier_code: [{ required: true, message: '请输入供应商编码' }],
+  supplier_name: [{ required: true, message: '请输入供应商名称' }],
+}
+
+async function loadData() {
+  loading.value = true
+  try {
+    const params = Object.fromEntries(Object.entries(query).filter(([, v]) => v !== ''))
+    const res = await http.get('/purchase/suppliers/', { params })
+    list.value = res.data.list
+    total.value = res.data.total
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    loading.value = false
+  }
+}
+
+function openDialog(row = {}) {
+  form.value = { ...row }
+  dialogVisible.value = true
+}
+
+async function handleSave() {
+  await formRef.value.validate()
+  saving.value = true
+  try {
+    if (form.value.id) {
+      await http.put(`/purchase/suppliers/${form.value.id}/`, form.value)
+    } else {
+      await http.post('/purchase/suppliers/', form.value)
+    }
+    ElMessage.success('保存成功')
+    dialogVisible.value = false
+    loadData()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    saving.value = false
+  }
+}
+
+async function handleDelete(row) {
+  await ElMessageBox.confirm(`确认删除供应商 "${row.supplier_name}"？`, '提示', { type: 'warning' })
+  await http.delete(`/purchase/suppliers/${row.id}/`)
+  ElMessage.success('删除成功')
+  loadData()
+}
+
+onMounted(loadData)
+</script>

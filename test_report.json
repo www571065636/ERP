@@ -1,0 +1,723 @@
+{
+  "generated_at": "2026-05-16 00:30:44",
+  "summary": {
+    "total": 89,
+    "passed": 89,
+    "failed": 0,
+    "pass_rate": "100.0%"
+  },
+  "results": [
+    {
+      "name": "登录",
+      "method": "POST",
+      "path": "/auth/login/",
+      "status": 200,
+      "pass": true,
+      "msg": "登录成功"
+    },
+    {
+      "name": "登录失败（密码错误）",
+      "method": "POST",
+      "path": "/auth/login/",
+      "status": 401,
+      "pass": true,
+      "msg": "账号或密码错误"
+    },
+    {
+      "name": "获取当前用户信息",
+      "method": "GET",
+      "path": "/auth/me/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "修改密码",
+      "method": "PUT",
+      "path": "/auth/me/password/",
+      "status": 200,
+      "pass": true,
+      "msg": "密码修改成功"
+    },
+    {
+      "name": "刷新 Token",
+      "method": "POST",
+      "path": "/auth/token/refresh/",
+      "status": 404,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "登出",
+      "method": "POST",
+      "path": "/auth/logout/",
+      "status": 200,
+      "pass": true,
+      "msg": "已登出"
+    },
+    {
+      "name": "创建权限",
+      "method": "POST",
+      "path": "/system/permissions/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "权限列表",
+      "method": "GET",
+      "path": "/system/permissions/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "权限树",
+      "method": "GET",
+      "path": "/system/permissions/tree/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "权限详情",
+      "method": "GET",
+      "path": "/system/permissions/11/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新权限",
+      "method": "PUT",
+      "path": "/system/permissions/11/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建角色",
+      "method": "POST",
+      "path": "/system/roles/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "角色列表",
+      "method": "GET",
+      "path": "/system/roles/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "角色详情",
+      "method": "GET",
+      "path": "/system/roles/6/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新角色",
+      "method": "PUT",
+      "path": "/system/roles/6/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "角色分配权限",
+      "method": "PUT",
+      "path": "/system/roles/6/permissions/",
+      "status": 200,
+      "pass": true,
+      "msg": "权限分配成功"
+    },
+    {
+      "name": "创建用户",
+      "method": "POST",
+      "path": "/system/users/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "用户列表",
+      "method": "GET",
+      "path": "/system/users/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "用户搜索",
+      "method": "GET",
+      "path": "/system/users/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "删除角色",
+      "method": "DELETE",
+      "path": "/system/roles/6/",
+      "status": 200,
+      "pass": true,
+      "msg": "删除成功"
+    },
+    {
+      "name": "删除权限",
+      "method": "DELETE",
+      "path": "/system/permissions/11/",
+      "status": 204,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建计量单位",
+      "method": "POST",
+      "path": "/products/units/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "计量单位列表",
+      "method": "GET",
+      "path": "/products/units/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "计量单位详情",
+      "method": "GET",
+      "path": "/products/units/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新计量单位",
+      "method": "PUT",
+      "path": "/products/units/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建产品分类",
+      "method": "POST",
+      "path": "/products/categories/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "产品分类列表",
+      "method": "GET",
+      "path": "/products/categories/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "产品分类树",
+      "method": "GET",
+      "path": "/products/categories/tree/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "产品分类详情",
+      "method": "GET",
+      "path": "/products/categories/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建产品",
+      "method": "POST",
+      "path": "/products/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "产品列表",
+      "method": "GET",
+      "path": "/products/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "产品详情",
+      "method": "GET",
+      "path": "/products/3/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新产品",
+      "method": "PUT",
+      "path": "/products/3/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建SKU",
+      "method": "POST",
+      "path": "/products/3/skus/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "SKU列表",
+      "method": "GET",
+      "path": "/products/3/skus/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "创建供应商",
+      "method": "POST",
+      "path": "/purchase/suppliers/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "供应商列表",
+      "method": "GET",
+      "path": "/purchase/suppliers/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "供应商搜索",
+      "method": "GET",
+      "path": "/purchase/suppliers/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "供应商详情",
+      "method": "GET",
+      "path": "/purchase/suppliers/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新供应商",
+      "method": "PUT",
+      "path": "/purchase/suppliers/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建采购订单",
+      "method": "POST",
+      "path": "/purchase/orders/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "采购订单列表",
+      "method": "GET",
+      "path": "/purchase/orders/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "创建客户",
+      "method": "POST",
+      "path": "/sales/customers/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "客户列表",
+      "method": "GET",
+      "path": "/sales/customers/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "客户搜索",
+      "method": "GET",
+      "path": "/sales/customers/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "客户详情",
+      "method": "GET",
+      "path": "/sales/customers/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新客户",
+      "method": "PUT",
+      "path": "/sales/customers/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建销售订单",
+      "method": "POST",
+      "path": "/sales/orders/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "销售订单列表",
+      "method": "GET",
+      "path": "/sales/orders/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "创建仓库",
+      "method": "POST",
+      "path": "/inventory/warehouses/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "仓库列表",
+      "method": "GET",
+      "path": "/inventory/warehouses/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "仓库详情",
+      "method": "GET",
+      "path": "/inventory/warehouses/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新仓库",
+      "method": "PUT",
+      "path": "/inventory/warehouses/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "库存列表",
+      "method": "GET",
+      "path": "/inventory/stocks/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "库存流水列表",
+      "method": "GET",
+      "path": "/inventory/transactions/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "创建会计科目",
+      "method": "POST",
+      "path": "/finance/accounts/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建会计科目2",
+      "method": "POST",
+      "path": "/finance/accounts/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "会计科目列表",
+      "method": "GET",
+      "path": "/finance/accounts/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "会计科目树",
+      "method": "GET",
+      "path": "/finance/accounts/tree/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "会计科目详情",
+      "method": "GET",
+      "path": "/finance/accounts/11/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建财务凭证",
+      "method": "POST",
+      "path": "/finance/vouchers/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "借贷不平衡（应失败）",
+      "method": "POST",
+      "path": "/finance/vouchers/",
+      "status": 400,
+      "pass": true,
+      "msg": "items: 借贷方合计必须相等"
+    },
+    {
+      "name": "财务凭证列表",
+      "method": "GET",
+      "path": "/finance/vouchers/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "创建应收账款",
+      "method": "POST",
+      "path": "/finance/receivables/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "应收账款列表",
+      "method": "GET",
+      "path": "/finance/receivables/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "应收账款详情",
+      "method": "GET",
+      "path": "/finance/receivables/6/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "登记收款（部分）",
+      "method": "POST",
+      "path": "/finance/receivables/6/payments/",
+      "status": 200,
+      "pass": true,
+      "msg": "收款登记成功"
+    },
+    {
+      "name": "登记收款（超额，应失败）",
+      "method": "POST",
+      "path": "/finance/receivables/6/payments/",
+      "status": 400,
+      "pass": true,
+      "msg": "收款金额不能超过未收余额 450.0"
+    },
+    {
+      "name": "登记收款（剩余）",
+      "method": "POST",
+      "path": "/finance/receivables/6/payments/",
+      "status": 200,
+      "pass": true,
+      "msg": "收款登记成功"
+    },
+    {
+      "name": "创建应付账款",
+      "method": "POST",
+      "path": "/finance/payables/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "应付账款列表",
+      "method": "GET",
+      "path": "/finance/payables/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "应付账款详情",
+      "method": "GET",
+      "path": "/finance/payables/6/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "登记付款",
+      "method": "POST",
+      "path": "/finance/payables/6/payments/",
+      "status": 200,
+      "pass": true,
+      "msg": "付款登记成功"
+    },
+    {
+      "name": "创建员工",
+      "method": "POST",
+      "path": "/hr/employees/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "员工列表",
+      "method": "GET",
+      "path": "/hr/employees/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "员工搜索",
+      "method": "GET",
+      "path": "/hr/employees/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "员工详情",
+      "method": "GET",
+      "path": "/hr/employees/6/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新员工",
+      "method": "PUT",
+      "path": "/hr/employees/6/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建考勤记录",
+      "method": "POST",
+      "path": "/hr/attendances/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "考勤列表",
+      "method": "GET",
+      "path": "/hr/attendances/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "考勤详情",
+      "method": "GET",
+      "path": "/hr/attendances/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "更新考勤",
+      "method": "PUT",
+      "path": "/hr/attendances/5/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "创建薪资单",
+      "method": "POST",
+      "path": "/hr/salaries/",
+      "status": 201,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "薪资列表",
+      "method": "GET",
+      "path": "/hr/salaries/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "薪资详情",
+      "method": "GET",
+      "path": "/hr/salaries/11/",
+      "status": 200,
+      "pass": true,
+      "msg": ""
+    },
+    {
+      "name": "审核薪资单",
+      "method": "POST",
+      "path": "/hr/salaries/11/review/",
+      "status": 200,
+      "pass": true,
+      "msg": "审核成功"
+    },
+    {
+      "name": "重复审核（应失败）",
+      "method": "POST",
+      "path": "/hr/salaries/11/review/",
+      "status": 400,
+      "pass": true,
+      "msg": "只有草稿状态可以审核"
+    },
+    {
+      "name": "批量生成薪资单",
+      "method": "POST",
+      "path": "/hr/salaries/generate/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    },
+    {
+      "name": "批量发放薪资",
+      "method": "POST",
+      "path": "/hr/salaries/batch_pay/",
+      "status": 200,
+      "pass": true,
+      "msg": "success"
+    }
+  ]
+}
