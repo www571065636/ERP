@@ -50,14 +50,22 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
               <el-divider direction="vertical" />
-              <el-button text type="primary" size="small" @click="openDialog({}, row.id)">添加子科目</el-button>
-              <el-divider direction="vertical" />
-              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, row)">
+                <el-button text type="primary" size="small">
+                  更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                </el-button>
+                <template #dropdown>
+                  <el-dropdown-menu>
+                    <el-dropdown-item command="addChild">添加子科目</el-dropdown-item>
+                    <el-dropdown-item command="delete" style="color:var(--el-color-danger)">删除</el-dropdown-item>
+                  </el-dropdown-menu>
+                </template>
+              </el-dropdown>
             </div>
           </template>
         </el-table-column>
@@ -96,6 +104,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowDown } from '@element-plus/icons-vue'
 import http from '@/utils/http'
 
 const loading = ref(false)
@@ -146,6 +155,11 @@ async function handleSave() {
   } finally {
     saving.value = false
   }
+}
+
+function handleCommand(cmd, row) {
+  if (cmd === 'addChild') openDialog({}, row.id)
+  else if (cmd === 'delete') handleDelete(row)
 }
 
 async function handleDelete(row) {
