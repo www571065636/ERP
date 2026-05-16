@@ -1,5 +1,6 @@
 from django.db import models
 from common.models import BaseModel
+from common.validators import phone_validator, email_validator
 
 
 class Supplier(BaseModel):
@@ -7,8 +8,8 @@ class Supplier(BaseModel):
     supplier_name = models.CharField(max_length=128)
     short_name = models.CharField(max_length=64, blank=True, default="")
     contact_person = models.CharField(max_length=64, blank=True, default="")
-    contact_phone = models.CharField(max_length=20, blank=True, default="")
-    email = models.EmailField(blank=True, default="")
+    contact_phone = models.CharField(max_length=20, blank=True, default="", validators=[phone_validator])
+    email = models.EmailField(blank=True, default="", validators=[email_validator])
     address = models.CharField(max_length=255, blank=True, default="")
     bank_name = models.CharField(max_length=128, blank=True, default="")
     bank_account = models.CharField(max_length=64, blank=True, default="")

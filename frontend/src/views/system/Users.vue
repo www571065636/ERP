@@ -36,7 +36,7 @@
         <el-table-column label="用户" min-width="160">
           <template #default="{ row }">
             <div style="display:flex;align-items:center;gap:10px">
-              <el-avatar :size="32" style="background:linear-gradient(135deg,#1a73e8,#0d47a1);flex-shrink:0">
+              <el-avatar :size="32" class="user-avatar-badge">
                 {{ (row.real_name||row.username||'?').charAt(0) }}
               </el-avatar>
               <div>
@@ -58,13 +58,15 @@
             <span style="color:#666;font-size:13px">{{ row.last_login_at ? row.last_login_at.slice(0,16).replace('T',' ') : '从未登录' }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="180" fixed="right" align="center">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-            <el-divider direction="vertical" />
-            <el-button text :type="row.status ? 'warning' : 'success'" size="small" @click="toggleStatus(row)">{{ row.status ? '禁用' : '启用' }}</el-button>
-            <el-divider direction="vertical" />
-            <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <div class="action-btns">
+              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span class="action-sep">|</span>
+              <el-button text :type="row.status ? 'warning' : 'success'" size="small" @click="toggleStatus(row)">{{ row.status ? '禁用' : '启用' }}</el-button>
+              <span class="action-sep">|</span>
+              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -84,10 +86,10 @@
         <el-form-item label="姓名" prop="real_name">
           <el-input v-model="form.real_name" placeholder="真实姓名" />
         </el-form-item>
-        <el-form-item label="邮箱">
+        <el-form-item label="邮箱" prop="email">
           <el-input v-model="form.email" placeholder="电子邮箱" />
         </el-form-item>
-        <el-form-item label="手机号">
+        <el-form-item label="手机号" prop="mobile">
           <el-input v-model="form.mobile" placeholder="手机号码" />
         </el-form-item>
       </el-form>
@@ -112,6 +114,8 @@ const rules = {
   username: [{ required: true, message: '请输入账号' }],
   password: [{ required: true, message: '请输入密码' }],
   real_name: [{ required: true, message: '请输入姓名' }],
+  email: [{ pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '请输入有效的邮箱地址', trigger: 'blur' }],
+  mobile: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号（11位数字）', trigger: 'blur' }],
 }
 async function loadData() {
   loading.value = true

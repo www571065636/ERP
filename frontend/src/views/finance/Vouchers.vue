@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#faad14,#d48806)">
+        <div class="page-header-icon">
           <el-icon><Tickets /></el-icon>
         </div>
         <div>
@@ -59,18 +59,18 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="viewDetail(row)">查看</el-button>
               <template v-if="row.status === 0">
-                <el-divider direction="vertical" />
+                <span class="action-sep">|</span>
                 <el-button text type="success" size="small" @click="reviewVoucher(row)">审核</el-button>
-                <el-divider direction="vertical" />
+                <span class="action-sep">|</span>
                 <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
               </template>
               <template v-if="row.status === 1">
-                <el-divider direction="vertical" />
+                <span class="action-sep">|</span>
                 <el-button text type="primary" size="small" @click="postVoucher(row)">过账</el-button>
               </template>
             </div>

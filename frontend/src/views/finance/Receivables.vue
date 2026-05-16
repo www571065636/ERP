@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#faad14,#d48806)">
+        <div class="page-header-icon">
           <el-icon><CreditCard /></el-icon>
         </div>
         <div>
@@ -61,11 +61,15 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button v-if="row.status < 2" text type="primary" size="small" @click="openPayment(row)">
-              收款
-            </el-button>
+            <div class="action-btns">
+              <el-button text type="primary" size="small"
+                :disabled="row.balance <= 0"
+                @click="openPayment(row)">
+                收款
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>

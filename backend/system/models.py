@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from common.models import BaseModel
+from common.validators import phone_validator, email_validator
 
 
 class UserManager(BaseUserManager):
@@ -20,8 +21,8 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     username = models.CharField(max_length=64, unique=True, verbose_name="账号")
     real_name = models.CharField(max_length=64, verbose_name="姓名")
     avatar = models.CharField(max_length=255, blank=True, default="", verbose_name="头像")
-    email = models.EmailField(blank=True, default="", verbose_name="邮箱")
-    mobile = models.CharField(max_length=20, blank=True, default="", verbose_name="手机号")
+    email = models.EmailField(blank=True, default="", verbose_name="邮箱", validators=[email_validator])
+    mobile = models.CharField(max_length=20, blank=True, default="", verbose_name="手机号", validators=[phone_validator])
     dept_id = models.BigIntegerField(null=True, blank=True, verbose_name="部门ID")
     status = models.BooleanField(default=True, verbose_name="启用状态")
     is_staff = models.BooleanField(default=False)

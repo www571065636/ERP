@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#722ed1,#531dab)">
+        <div class="page-header-icon">
           <el-icon><Shop /></el-icon>
         </div>
         <div>
@@ -43,11 +43,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <el-divider direction="vertical" />
+              <span class="action-sep">|</span>
               <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>

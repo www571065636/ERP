@@ -23,6 +23,7 @@ class OrderItemSerializer(drf_serializers.ModelSerializer):
         model = PurchaseOrderItem
         fields = ["id", "line_no", "product_id", "sku_id", "unit_id",
                   "qty", "unit_price", "tax_rate", "tax_amount", "amount", "received_qty", "remark"]
+        read_only_fields = ["id", "line_no", "received_qty"]
 
 
 class PurchaseOrderSerializer(drf_serializers.ModelSerializer):

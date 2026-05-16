@@ -1,5 +1,6 @@
 from django.db import models
 from common.models import BaseModel
+from common.validators import phone_validator, email_validator
 
 
 class Customer(BaseModel):
@@ -7,8 +8,8 @@ class Customer(BaseModel):
     customer_name = models.CharField(max_length=128)
     customer_type = models.SmallIntegerField(default=1)
     contact_person = models.CharField(max_length=64, blank=True, default="")
-    contact_phone = models.CharField(max_length=20, blank=True, default="")
-    email = models.EmailField(blank=True, default="")
+    contact_phone = models.CharField(max_length=20, blank=True, default="", validators=[phone_validator])
+    email = models.EmailField(blank=True, default="", validators=[email_validator])
     address = models.CharField(max_length=255, blank=True, default="")
     credit_limit = models.DecimalField(max_digits=15, decimal_places=2, null=True, blank=True)
     credit_used = models.DecimalField(max_digits=15, decimal_places=2, default=0)
@@ -79,7 +80,7 @@ class Delivery(BaseModel):
     logistics_co = models.CharField(max_length=64, blank=True, default="")
     tracking_no = models.CharField(max_length=64, blank=True, default="")
     receiver_name = models.CharField(max_length=64, blank=True, default="")
-    receiver_phone = models.CharField(max_length=20, blank=True, default="")
+    receiver_phone = models.CharField(max_length=20, blank=True, default="", validators=[phone_validator])
     receiver_addr = models.CharField(max_length=255, blank=True, default="")
     status = models.SmallIntegerField(default=0)
     operator_id = models.BigIntegerField()

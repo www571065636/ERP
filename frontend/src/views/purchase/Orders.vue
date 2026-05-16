@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#fa8c16,#d46b08)">
+        <div class="page-header-icon">
           <el-icon><ShoppingCart /></el-icon>
         </div>
         <div>
@@ -57,18 +57,18 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right">
+        <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="viewDetail(row)">查看</el-button>
               <template v-if="row.status === 0">
-                <el-divider direction="vertical" />
+                <span class="action-sep">|</span>
                 <el-button text type="primary" size="small" @click="submitOrder(row)">提交</el-button>
-                <el-divider direction="vertical" />
+                <span class="action-sep">|</span>
                 <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
               </template>
               <template v-if="row.status === 1">
-                <el-divider direction="vertical" />
+                <span class="action-sep">|</span>
                 <el-button text type="success" size="small" @click="approveOrder(row)">审批</el-button>
               </template>
             </div>
@@ -104,7 +104,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="仓库">
-              <el-select v-model="form.warehouse" style="width:100%" placeholder="选择仓库">
+              <el-select v-model="form.warehouse_id" style="width:100%" placeholder="选择仓库">
                 <el-option v-for="w in warehouses" :key="w.id" :label="w.warehouse_name" :value="w.id" />
               </el-select>
             </el-form-item>
@@ -123,9 +123,9 @@
           </el-button>
         </div>
         <el-table :data="form.items" border size="small" style="margin-bottom:8px">
-          <el-table-column label="产品" min-width="160">
+          <el-table-column label="产品" min-width="180">
             <template #default="{ row }">
-              <el-select v-if="!viewMode" v-model="row.product" filterable size="small"
+              <el-select v-if="!viewMode" v-model="row.product_id" filterable size="small"
                 style="width:100%" @change="onProductChange(row)">
                 <el-option v-for="p in products" :key="p.id" :label="p.product_name" :value="p.id" />
               </el-select>
@@ -134,24 +134,24 @@
           </el-table-column>
           <el-table-column label="数量" width="110">
             <template #default="{ row }">
-              <el-input-number v-if="!viewMode" v-model="row.quantity" :min="0.0001"
-                :precision="4" size="small" style="width:100%" @change="calcRow(row)" />
-              <span v-else>{{ row.quantity }}</span>
+              <el-input-number v-if="!viewMode" v-model="row.qty" :min="1"
+                :step="1" :precision="0" size="small" style="width:100%" @change="calcRow(row)" />
+              <span v-else>{{ row.qty }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="单价" width="120">
+          <el-table-column label="单价" width="130">
             <template #default="{ row }">
               <el-input-number v-if="!viewMode" v-model="row.unit_price" :min="0"
-                :precision="4" size="small" style="width:100%" @change="calcRow(row)" />
+                :precision="2" size="small" style="width:100%" @change="calcRow(row)" />
               <span v-else>{{ row.unit_price }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="amount" label="金额" width="110" align="right">
+          <el-table-column prop="amount" label="金额" width="110">
             <template #default="{ row }">
               <span style="color:#1a73e8">¥{{ row.amount || 0 }}</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="!viewMode" label="" width="50">
+          <el-table-column v-if="!viewMode" label="" width="55" align="center">
             <template #default="{ $index }">
               <el-button text type="danger" size="small" @click="form.items.splice($index, 1)">
                 <el-icon><Delete /></el-icon>
@@ -250,11 +250,11 @@ function viewDetail(row) {
 }
 
 function addItem() {
-  form.value.items.push({ product: null, quantity: 1, unit_price: 0, amount: 0 })
+  form.value.items.push({ product_id: null, unit_id: 1, qty: 1, unit_price: 0, amount: 0 })
 }
 
 function onProductChange(row) {
-  const p = products.value.find(x => x.id === row.product)
+  const p = products.value.find(x => x.id === row.product_id)
   if (p) {
     row.product_name = p.product_name
     row.unit_price = p.purchase_price || 0
@@ -263,12 +263,13 @@ function onProductChange(row) {
 }
 
 function calcRow(row) {
-  row.amount = ((row.quantity || 0) * (row.unit_price || 0)).toFixed(2)
+  row.amount = ((row.qty || 0) * (row.unit_price || 0)).toFixed(2)
 }
 
 async function handleSave() {
   await formRef.value.validate()
   if (!form.value.items.length) return ElMessage.warning('请添加采购明细')
+  if (form.value.items.some(i => !i.product_id)) return ElMessage.warning('请为所有明细行选择产品')
   saving.value = true
   try {
     const payload = { ...form.value, total_amount: totalAmount.value }

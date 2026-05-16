@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#7c3aed,#4c1d95)"><el-icon><UserFilled /></el-icon></div>
+        <div class="page-header-icon"><el-icon><UserFilled /></el-icon></div>
         <div><div class="page-header-title">角色管理</div><div class="page-header-sub">配置系统角色与数据权限</div></div>
       </div>
       <el-button type="primary" :icon="Plus" @click="openDialog()">新增角色</el-button>
@@ -33,11 +33,13 @@
           </template>
         </el-table-column>
         <el-table-column prop="remark" label="备注" show-overflow-tooltip />
-        <el-table-column label="操作" width="120" fixed="right" align="center">
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-            <el-divider direction="vertical" />
-            <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            <div class="action-btns">
+              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span class="action-sep">|</span>
+              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>

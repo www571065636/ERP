@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#13c2c2,#006d75)">
+        <div class="page-header-icon">
           <el-icon><Avatar /></el-icon>
         </div>
         <div>
@@ -55,11 +55,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <el-divider direction="vertical" />
+              <span class="action-sep">|</span>
               <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
@@ -91,12 +91,12 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="联系电话">
+            <el-form-item label="联系电话" prop="contact_phone">
               <el-input v-model="form.contact_phone" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="邮箱">
+            <el-form-item label="邮箱" prop="email">
               <el-input v-model="form.email" />
             </el-form-item>
           </el-col>
@@ -136,6 +136,8 @@ const query = reactive({ search: '', page: 1, page_size: 20 })
 const rules = {
   customer_code: [{ required: true, message: '请输入客户编码' }],
   customer_name: [{ required: true, message: '请输入客户名称' }],
+  contact_phone: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号（11位数字）', trigger: 'blur' }],
+  email: [{ pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '请输入有效的邮箱地址', trigger: 'blur' }],
 }
 
 async function loadData() {

@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#eb2f96,#9e1068)">
+        <div class="page-header-icon">
           <el-icon><Calendar /></el-icon>
         </div>
         <div>
@@ -39,7 +39,7 @@
         <el-tag effect="light" type="info">共 {{ total }} 条</el-tag>
       </div>
       <el-table :data="list" v-loading="loading" stripe>
-        <el-table-column label="员工" width="130">
+        <el-table-column label="员工" min-width="160">
           <template #default="{ row }">
             <div style="display:flex;align-items:center;gap:6px">
               <el-avatar :size="28" style="background:#eb2f96;flex-shrink:0;font-size:12px">
@@ -53,12 +53,12 @@
           </template>
         </el-table-column>
         <el-table-column prop="attend_date" label="考勤日期" width="100" />
-        <el-table-column label="签到时间" width="145">
+        <el-table-column label="签到时间" min-width="160">
           <template #default="{ row }">
             {{ row.check_in_time ? row.check_in_time.slice(0, 16).replace('T', ' ') : '-' }}
           </template>
         </el-table-column>
-        <el-table-column label="签退时间" width="145">
+        <el-table-column label="签退时间" min-width="160">
           <template #default="{ row }">
             {{ row.check_out_time ? row.check_out_time.slice(0, 16).replace('T', ' ') : '-' }}
           </template>
@@ -71,11 +71,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="overtime_hours" label="加班工时" width="100" align="center" />
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <el-divider direction="vertical" />
+              <span class="action-sep">|</span>
               <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>

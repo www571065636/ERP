@@ -1,5 +1,6 @@
 from django.db import models
 from common.models import BaseModel
+from common.validators import phone_validator, email_validator
 
 
 class Employee(BaseModel):
@@ -12,8 +13,8 @@ class Employee(BaseModel):
     gender = models.SmallIntegerField(choices=GENDERS, null=True, blank=True)
     birth_date = models.DateField(null=True, blank=True)
     id_card = models.CharField(max_length=32, blank=True, default="")
-    mobile = models.CharField(max_length=20, blank=True, default="")
-    email = models.CharField(max_length=128, blank=True, default="")
+    mobile = models.CharField(max_length=20, blank=True, default="", validators=[phone_validator])
+    email = models.CharField(max_length=128, blank=True, default="", validators=[email_validator])
     dept_id = models.BigIntegerField(null=True, blank=True)
     position = models.CharField(max_length=64, blank=True, default="")
     entry_date = models.DateField(null=True, blank=True)

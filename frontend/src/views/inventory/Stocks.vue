@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#722ed1,#531dab)">
+        <div class="page-header-icon">
           <el-icon><DataLine /></el-icon>
         </div>
         <div>

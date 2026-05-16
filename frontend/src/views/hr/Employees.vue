@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#eb2f96,#9e1068)">
+        <div class="page-header-icon">
           <el-icon><User /></el-icon>
         </div>
         <div>
@@ -64,11 +64,11 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120" fixed="right">
+        <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <el-divider direction="vertical" />
+              <span class="action-sep">|</span>
               <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
@@ -103,7 +103,7 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="手机号">
+            <el-form-item label="手机号" prop="mobile">
               <el-input v-model="form.mobile" />
             </el-form-item>
           </el-col>
@@ -168,6 +168,8 @@ const statusTypes = { 1: 'success', 2: 'danger', 3: 'warning' }
 const rules = {
   employee_no: [{ required: true, message: '请输入工号' }],
   real_name: [{ required: true, message: '请输入姓名' }],
+  mobile: [{ pattern: /^1[3-9]\d{9}$/, message: '请输入有效的手机号（11位数字）', trigger: 'blur' }],
+  email: [{ pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: '请输入有效的邮箱地址', trigger: 'blur' }],
 }
 
 async function loadData() {

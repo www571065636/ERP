@@ -2,7 +2,7 @@
   <div class="page-container">
     <div class="page-header">
       <div class="page-header-left">
-        <div class="page-header-icon" style="background:linear-gradient(135deg,#52c41a,#237804)">
+        <div class="page-header-icon">
           <el-icon><Menu /></el-icon>
         </div>
         <div>
@@ -36,11 +36,11 @@
           </template>
         </el-table-column>
         <el-table-column prop="sort_order" label="排序" width="80" align="center" />
-        <el-table-column label="操作" width="150" fixed="right">
+        <el-table-column label="操作" width="150" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <el-divider direction="vertical" />
+              <span class="action-sep">|</span>
               <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, row)">
                 <el-button text type="primary" size="small">
                   更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
