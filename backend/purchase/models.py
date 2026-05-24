@@ -5,7 +5,7 @@ from common.validators import phone_validator, email_validator
 
 class Supplier(BaseModel):
     supplier_code = models.CharField(max_length=64, unique=True)
-    supplier_name = models.CharField(max_length=128)
+    supplier_name = models.CharField(max_length=128, db_index=True)
     short_name = models.CharField(max_length=64, blank=True, default="")
     contact_person = models.CharField(max_length=64, blank=True, default="")
     contact_phone = models.CharField(max_length=20, blank=True, default="", validators=[phone_validator])
@@ -34,13 +34,13 @@ class PurchaseOrder(BaseModel):
     supplier = models.ForeignKey(Supplier, on_delete=models.PROTECT)
     warehouse_id = models.BigIntegerField()
     buyer_id = models.BigIntegerField()
-    order_date = models.DateField()
+    order_date = models.DateField(db_index=True)
     expected_date = models.DateField(null=True, blank=True)
     currency = models.CharField(max_length=8, default="CNY")
     total_qty = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    status = models.SmallIntegerField(default=0, choices=STATUS_CHOICES)
+    status = models.SmallIntegerField(default=0, choices=STATUS_CHOICES, db_index=True)
     approve_by = models.BigIntegerField(null=True, blank=True)
     approve_at = models.DateTimeField(null=True, blank=True)
     approve_remark = models.CharField(max_length=500, blank=True, default="")
@@ -57,7 +57,7 @@ class PurchaseOrder(BaseModel):
 class PurchaseOrderItem(models.Model):
     order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name="items")
     line_no = models.IntegerField()
-    product_id = models.BigIntegerField()
+    product_id = models.BigIntegerField(db_index=True)
     sku_id = models.BigIntegerField(null=True, blank=True)
     unit_id = models.BigIntegerField()
     qty = models.DecimalField(max_digits=15, decimal_places=4)

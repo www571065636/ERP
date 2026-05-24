@@ -74,7 +74,7 @@
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑科目' : '新增科目'"
       width="480px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" class="dialog-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dialog-form">
         <el-form-item label="科目编码" prop="account_code">
           <el-input v-model="form.account_code" />
         </el-form-item>

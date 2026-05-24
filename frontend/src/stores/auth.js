@@ -11,15 +11,25 @@ export const useAuthStore = defineStore('auth', () => {
   const permissions = computed(() => user.value?.permissions || [])
 
   function hasPermission(perm) {
+    if (!perm) return true
+    if (Array.isArray(perm)) return perm.every(item => permissions.value.includes(item))
     return permissions.value.includes(perm)
+  }
+
+  function setAccessToken(access) {
+    token.value = access || ''
+    if (access) {
+      localStorage.setItem('access_token', access)
+    } else {
+      localStorage.removeItem('access_token')
+    }
   }
 
   async function login(username, password) {
     const res = await http.post('/auth/login/', { username, password })
-    token.value = res.data.access
+    setAccessToken(res.data.access)
     refreshToken.value = res.data.refresh
     user.value = res.data.user
-    localStorage.setItem('access_token', res.data.access)
     localStorage.setItem('refresh_token', res.data.refresh)
     localStorage.setItem('user', JSON.stringify(res.data.user))
     return res.data
@@ -29,10 +39,9 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       await http.post('/auth/logout/', { refresh: refreshToken.value })
     } catch {}
-    token.value = ''
+    setAccessToken('')
     refreshToken.value = ''
     user.value = null
-    localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user')
   }
@@ -41,7 +50,8 @@ export const useAuthStore = defineStore('auth', () => {
     const res = await http.get('/auth/me/')
     user.value = res.data
     localStorage.setItem('user', JSON.stringify(res.data))
+    return res.data
   }
 
-  return { token, user, isLoggedIn, permissions, hasPermission, login, logout, fetchMe }
+  return { token, refreshToken, user, isLoggedIn, permissions, hasPermission, setAccessToken, login, logout, fetchMe }
 })

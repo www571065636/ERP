@@ -22,9 +22,9 @@ class User(AbstractBaseUser, PermissionsMixin, BaseModel):
     real_name = models.CharField(max_length=64, verbose_name="姓名")
     avatar = models.CharField(max_length=255, blank=True, default="", verbose_name="头像")
     email = models.EmailField(blank=True, default="", verbose_name="邮箱", validators=[email_validator])
-    mobile = models.CharField(max_length=20, blank=True, default="", verbose_name="手机号", validators=[phone_validator])
-    dept_id = models.BigIntegerField(null=True, blank=True, verbose_name="部门ID")
-    status = models.BooleanField(default=True, verbose_name="启用状态")
+    mobile = models.CharField(max_length=20, blank=True, default="", db_index=True, verbose_name="手机号", validators=[phone_validator])
+    dept_id = models.BigIntegerField(null=True, blank=True, db_index=True, verbose_name="部门ID")
+    status = models.BooleanField(default=True, db_index=True, verbose_name="启用状态")
     is_staff = models.BooleanField(default=False)
     last_login_ip = models.CharField(max_length=64, blank=True, default="")
     last_login_at = models.DateTimeField(null=True, blank=True)
@@ -48,7 +48,7 @@ class Role(BaseModel):
     data_scope = models.SmallIntegerField(default=1, verbose_name="数据权限")
     sort_order = models.IntegerField(default=0)
     remark = models.CharField(max_length=500, blank=True, default="")
-    status = models.BooleanField(default=True)
+    status = models.BooleanField(default=True, db_index=True)
     users = models.ManyToManyField(User, through="UserRole", related_name="roles", blank=True)
 
     class Meta:
@@ -60,9 +60,9 @@ class Role(BaseModel):
 
 
 class Permission(BaseModel):
-    parent_id = models.BigIntegerField(default=0, verbose_name="父节点ID")
+    parent_id = models.BigIntegerField(default=0, db_index=True, verbose_name="父节点ID")
     perm_name = models.CharField(max_length=64, verbose_name="权限名称")
-    perm_code = models.CharField(max_length=128, blank=True, default="", verbose_name="权限标识")
+    perm_code = models.CharField(max_length=128, blank=True, default="", db_index=True, verbose_name="权限标识")
     perm_type = models.SmallIntegerField(verbose_name="类型 1目录 2菜单 3按钮")
     path = models.CharField(max_length=255, blank=True, default="", verbose_name="路由路径")
     component = models.CharField(max_length=255, blank=True, default="", verbose_name="组件路径")

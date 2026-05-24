@@ -10,7 +10,7 @@
           <div class="page-header-sub">管理产品的层级分类结构</div>
         </div>
       </div>
-      <el-button type="primary" @click="openDialog()">
+      <el-button v-if="auth.hasPermission('product:category:create')" type="primary" @click="openDialog()">
         <el-icon><Plus /></el-icon>新增分类
       </el-button>
     </div>
@@ -39,16 +39,16 @@
         <el-table-column label="操作" width="150" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <span class="action-sep">|</span>
-              <el-dropdown trigger="click" @command="(cmd) => handleCommand(cmd, row)">
+              <el-button v-if="auth.hasPermission('product:category:update')" text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span v-if="auth.hasPermission('product:category:update') && (auth.hasPermission('product:category:create') || auth.hasPermission('product:category:delete'))" class="action-sep">|</span>
+              <el-dropdown v-if="auth.hasPermission('product:category:create') || auth.hasPermission('product:category:delete')" trigger="click" @command="(cmd) => handleCommand(cmd, row)">
                 <el-button text type="primary" size="small">
                   更多<el-icon class="el-icon--right"><ArrowDown /></el-icon>
                 </el-button>
                 <template #dropdown>
                   <el-dropdown-menu>
-                    <el-dropdown-item command="addChild">添加子级</el-dropdown-item>
-                    <el-dropdown-item command="delete" style="color:var(--el-color-danger)">删除</el-dropdown-item>
+                    <el-dropdown-item v-if="auth.hasPermission('product:category:create')" command="addChild">添加子级</el-dropdown-item>
+                    <el-dropdown-item v-if="auth.hasPermission('product:category:delete')" command="delete" style="color:var(--el-color-danger)">删除</el-dropdown-item>
                   </el-dropdown-menu>
                 </template>
               </el-dropdown>
@@ -60,7 +60,7 @@
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑分类' : '新增分类'"
       width="440px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" class="dialog-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dialog-form">
         <el-form-item label="分类名称" prop="cat_name">
           <el-input v-model="form.cat_name" placeholder="请输入分类名称" />
         </el-form-item>
@@ -84,6 +84,9 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowDown } from '@element-plus/icons-vue'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

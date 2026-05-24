@@ -10,7 +10,7 @@
           <div class="page-header-sub">管理采购供应商信息与合作条款</div>
         </div>
       </div>
-      <el-button type="primary" @click="openDialog()">
+      <el-button v-if="auth.hasPermission('purchase:supplier:create')" type="primary" @click="openDialog()">
         <el-icon><Plus /></el-icon>新增供应商
       </el-button>
     </div>
@@ -41,7 +41,7 @@
         <el-table-column prop="supplier_name" label="供应商名称" min-width="160" />
         <el-table-column prop="contact_person" label="联系人" width="100" />
         <el-table-column prop="contact_phone" label="联系电话" width="140" />
-        <el-table-column prop="payment_terms" label="付款条件" width="120" />
+        <el-table-column prop="payment_terms" label="付款条件 (天)" width="140" />
         <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag effect="light" :type="row.status ? 'success' : 'danger'" size="small">
@@ -52,9 +52,9 @@
         <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <span class="action-sep">|</span>
-              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="auth.hasPermission('purchase:supplier:update')" text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span v-if="auth.hasPermission('purchase:supplier:update') && auth.hasPermission('purchase:supplier:delete')" class="action-sep">|</span>
+              <el-button v-if="auth.hasPermission('purchase:supplier:delete')" text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -67,7 +67,7 @@
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑供应商' : '新增供应商'"
       width="600px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" class="dialog-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="110px" class="dialog-form">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="供应商编码" prop="supplier_code">
@@ -95,8 +95,8 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="付款条件">
-              <el-input v-model="form.payment_terms" />
+            <el-form-item label="付款条件 (天)">
+              <el-input v-model="form.payment_terms" placeholder="如 30 表示收货后 30 天内付款" />
             </el-form-item>
           </el-col>
           <el-col :span="12">
@@ -128,6 +128,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

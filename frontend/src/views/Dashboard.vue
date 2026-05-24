@@ -67,18 +67,21 @@
 </template>
 
 <script setup>
+import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import dayjs from 'dayjs'
+import { ElMessage } from 'element-plus'
+import http from '@/utils/http'
 
 const router = useRouter()
 const today = dayjs().format('YYYY年MM月DD日')
 
-const statCards = [
+const statCards = ref([
   { title: '采购订单', value: '0', icon: 'ShoppingCart', gradient: 'linear-gradient(135deg, #f59e0b, #d97706)' },
   { title: '销售订单', value: '0', icon: 'Sell', gradient: 'linear-gradient(135deg, #06b6d4, #0891b2)' },
   { title: '库存预警', value: '0', icon: 'Warning', gradient: 'linear-gradient(135deg, #ef4444, #dc2626)' },
   { title: '员工总数', value: '0', icon: 'User', gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' },
-]
+])
 
 const shortcuts = [
   { title: '采购订单', path: '/purchase/orders', icon: 'ShoppingCart', color: '#f59e0b' },
@@ -89,14 +92,28 @@ const shortcuts = [
   { title: '系统用户', path: '/system/users', icon: 'Setting', color: '#6366f1' },
 ]
 
-const overview = [
+const overview = ref([
   { label: '产品总数', value: '0', color: '#10b981' },
   { label: '供应商数', value: '0', color: '#f59e0b' },
   { label: '客户数', value: '0', color: '#06b6d4' },
   { label: '仓库数', value: '0', color: '#8b5cf6' },
   { label: '待审批', value: '0', color: '#ef4444' },
   { label: '本月订单', value: '0', color: '#6366f1' },
-]
+])
+
+async function loadStats() {
+  try {
+    const res = await http.get('/system/dashboard/stats/')
+    const cardMap = Object.fromEntries((res.data.stat_cards || []).map(item => [item.title, item.value]))
+    statCards.value = statCards.value.map(item => ({ ...item, value: String(cardMap[item.title] ?? item.value) }))
+    const overviewMap = Object.fromEntries((res.data.overview || []).map(item => [item.label, item.value]))
+    overview.value = overview.value.map(item => ({ ...item, value: String(overviewMap[item.label] ?? item.value) }))
+  } catch (e) {
+    ElMessage.error(e.message)
+  }
+}
+
+onMounted(loadStats)
 </script>
 
 <style scoped>

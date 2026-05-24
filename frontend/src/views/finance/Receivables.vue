@@ -64,7 +64,7 @@
         <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button text type="primary" size="small"
+              <el-button v-if="auth.hasPermission('finance:receivable:payment')" text type="primary" size="small"
                 :disabled="row.balance <= 0"
                 @click="openPayment(row)">
                 收款
@@ -80,7 +80,7 @@
     </div>
 
     <el-dialog v-model="paymentVisible" title="收款登记" width="400px" destroy-on-close>
-      <el-form ref="payFormRef" :model="payForm" label-width="90px" class="dialog-form">
+      <el-form ref="payFormRef" :model="payForm" label-width="100px" class="dialog-form">
         <el-form-item label="应收单号">
           <span style="color:#faad14;font-weight:500">{{ payForm.receivable_no }}</span>
         </el-form-item>
@@ -111,6 +111,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import dayjs from 'dayjs'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

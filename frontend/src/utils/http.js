@@ -7,6 +7,8 @@ const http = axios.create({
   timeout: 15000,
 })
 
+let refreshing = null
+
 http.interceptors.request.use((config) => {
   const auth = useAuthStore()
   if (auth.token) {
@@ -17,10 +19,30 @@ http.interceptors.request.use((config) => {
 
 http.interceptors.response.use(
   (res) => res.data,
-  (err) => {
+  async (err) => {
     const status = err.response?.status
-    if (status === 401) {
-      useAuthStore().logout()
+    const originalRequest = err.config || {}
+    const auth = useAuthStore()
+    const isLoginRequest = originalRequest.url?.includes('/auth/login')
+
+    // Token 刷新逻辑
+    if (status === 401 && auth.refreshToken && !originalRequest._retry && !isLoginRequest) {
+      originalRequest._retry = true
+      try {
+        refreshing ||= http.post('/auth/token/refresh/', { refresh: auth.refreshToken })
+        const res = await refreshing
+        refreshing = null
+        auth.setAccessToken(res.access)
+        originalRequest.headers = originalRequest.headers || {}
+        originalRequest.headers.Authorization = `Bearer ${auth.token}`
+        return http(originalRequest)
+      } catch {
+        refreshing = null
+      }
+    }
+    // 非登录请求的 401 才触发登出跳转
+    if (status === 401 && !isLoginRequest) {
+      await auth.logout()
       router.push('/login')
     }
     const msg = err.response?.data?.msg || '请求失败'

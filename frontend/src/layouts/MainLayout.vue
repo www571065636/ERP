@@ -26,120 +26,14 @@
             <template #title>首页</template>
           </el-menu-item>
 
-          <el-sub-menu index="system">
+          <el-sub-menu v-for="group in menuGroups" :key="group.key" :index="group.key">
             <template #title>
-              <el-icon><Setting /></el-icon>
-              <span>系统管理</span>
+              <el-icon><component :is="group.icon" /></el-icon>
+              <span>{{ group.title }}</span>
             </template>
-            <el-menu-item index="/system/users">
-              <el-icon><User /></el-icon>
-              <span>用户管理</span>
-            </el-menu-item>
-            <el-menu-item index="/system/roles">
-              <el-icon><UserFilled /></el-icon>
-              <span>角色管理</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="product">
-            <template #title>
-              <el-icon><Goods /></el-icon>
-              <span>产品管理</span>
-            </template>
-            <el-menu-item index="/products/categories">
-              <el-icon><Menu /></el-icon>
-              <span>产品分类</span>
-            </el-menu-item>
-            <el-menu-item index="/products">
-              <el-icon><Box /></el-icon>
-              <span>产品列表</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="purchase">
-            <template #title>
-              <el-icon><ShoppingCart /></el-icon>
-              <span>采购管理</span>
-            </template>
-            <el-menu-item index="/purchase/suppliers">
-              <el-icon><OfficeBuilding /></el-icon>
-              <span>供应商</span>
-            </el-menu-item>
-            <el-menu-item index="/purchase/orders">
-              <el-icon><Document /></el-icon>
-              <span>采购订单</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="sales">
-            <template #title>
-              <el-icon><Sell /></el-icon>
-              <span>销售管理</span>
-            </template>
-            <el-menu-item index="/sales/customers">
-              <el-icon><Avatar /></el-icon>
-              <span>客户管理</span>
-            </el-menu-item>
-            <el-menu-item index="/sales/orders">
-              <el-icon><Document /></el-icon>
-              <span>销售订单</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="inventory">
-            <template #title>
-              <el-icon><Shop /></el-icon>
-              <span>库存管理</span>
-            </template>
-            <el-menu-item index="/inventory/warehouses">
-              <el-icon><House /></el-icon>
-              <span>仓库管理</span>
-            </el-menu-item>
-            <el-menu-item index="/inventory/stocks">
-              <el-icon><DataLine /></el-icon>
-              <span>库存查询</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="finance">
-            <template #title>
-              <el-icon><Money /></el-icon>
-              <span>财务管理</span>
-            </template>
-            <el-menu-item index="/finance/accounts">
-              <el-icon><List /></el-icon>
-              <span>会计科目</span>
-            </el-menu-item>
-            <el-menu-item index="/finance/vouchers">
-              <el-icon><Tickets /></el-icon>
-              <span>财务凭证</span>
-            </el-menu-item>
-            <el-menu-item index="/finance/receivables">
-              <el-icon><CreditCard /></el-icon>
-              <span>应收账款</span>
-            </el-menu-item>
-            <el-menu-item index="/finance/payables">
-              <el-icon><Wallet /></el-icon>
-              <span>应付账款</span>
-            </el-menu-item>
-          </el-sub-menu>
-
-          <el-sub-menu index="hr">
-            <template #title>
-              <el-icon><PieChart /></el-icon>
-              <span>人力资源</span>
-            </template>
-            <el-menu-item index="/hr/employees">
-              <el-icon><User /></el-icon>
-              <span>员工管理</span>
-            </el-menu-item>
-            <el-menu-item index="/hr/attendances">
-              <el-icon><Calendar /></el-icon>
-              <span>考勤管理</span>
-            </el-menu-item>
-            <el-menu-item index="/hr/salaries">
-              <el-icon><Coin /></el-icon>
-              <span>薪资管理</span>
+            <el-menu-item v-for="item in group.children" :key="item.index" :index="item.index">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.title }}</span>
             </el-menu-item>
           </el-sub-menu>
         </el-menu>
@@ -222,17 +116,79 @@ const router = useRouter()
 const auth = useAuthStore()
 const collapsed = ref(false)
 
-const activeMenu = computed(() => {
-  const path = route.path
-  if (path.startsWith('/system')) return 'system'
-  if (path.startsWith('/product')) return 'product'
-  if (path.startsWith('/purchase')) return 'purchase'
-  if (path.startsWith('/sales')) return 'sales'
-  if (path.startsWith('/inventory')) return 'inventory'
-  if (path.startsWith('/finance')) return 'finance'
-  if (path.startsWith('/hr')) return 'hr'
-  return path
-})
+const menuGroups = computed(() => [
+  {
+    key: 'system',
+    title: '系统管理',
+    icon: Setting,
+    children: [
+      { index: '/system/users', title: '用户管理', icon: User, permission: 'system:user:list' },
+      { index: '/system/roles', title: '角色管理', icon: UserFilled, permission: 'system:role:list' },
+    ],
+  },
+  {
+    key: 'product',
+    title: '产品管理',
+    icon: Goods,
+    children: [
+      { index: '/products/categories', title: '产品分类', icon: Menu, permission: 'product:category:list' },
+      { index: '/products', title: '产品列表', icon: Box, permission: 'product:product:list' },
+    ],
+  },
+  {
+    key: 'purchase',
+    title: '采购管理',
+    icon: ShoppingCart,
+    children: [
+      { index: '/purchase/suppliers', title: '供应商', icon: OfficeBuilding, permission: 'purchase:supplier:list' },
+      { index: '/purchase/orders', title: '采购订单', icon: Document, permission: 'purchase:order:list' },
+    ],
+  },
+  {
+    key: 'sales',
+    title: '销售管理',
+    icon: Sell,
+    children: [
+      { index: '/sales/customers', title: '客户管理', icon: Avatar, permission: 'sales:customer:list' },
+      { index: '/sales/orders', title: '销售订单', icon: Document, permission: 'sales:order:list' },
+    ],
+  },
+  {
+    key: 'inventory',
+    title: '库存管理',
+    icon: Shop,
+    children: [
+      { index: '/inventory/warehouses', title: '仓库管理', icon: House, permission: 'inventory:warehouse:list' },
+      { index: '/inventory/stocks', title: '库存查询', icon: DataLine, permission: 'inventory:stock:list' },
+    ],
+  },
+  {
+    key: 'finance',
+    title: '财务管理',
+    icon: Money,
+    children: [
+      { index: '/finance/accounts', title: '会计科目', icon: List, permission: 'finance:account:list' },
+      { index: '/finance/vouchers', title: '财务凭证', icon: Tickets, permission: 'finance:voucher:list' },
+      { index: '/finance/receivables', title: '应收账款', icon: CreditCard, permission: 'finance:receivable:list' },
+      { index: '/finance/payables', title: '应付账款', icon: Wallet, permission: 'finance:payable:list' },
+    ],
+  },
+  {
+    key: 'hr',
+    title: '人力资源',
+    icon: PieChart,
+    children: [
+      { index: '/hr/employees', title: '员工管理', icon: User, permission: 'hr:employee:list' },
+      { index: '/hr/attendances', title: '考勤管理', icon: Calendar, permission: 'hr:attendance:list' },
+      { index: '/hr/salaries', title: '薪资管理', icon: Coin, permission: 'hr:salary:list' },
+    ],
+  },
+].map(group => ({
+  ...group,
+  children: group.children.filter(item => auth.hasPermission(item.permission)),
+})).filter(group => group.children.length > 0))
+
+const activeMenu = computed(() => route.path)
 
 const userInitial = computed(() => {
   const name = auth.user?.real_name || auth.user?.username || '?'
@@ -245,7 +201,6 @@ async function handleCommand(cmd) {
     await auth.logout()
     router.push('/login')
   } else if (cmd === 'profile') {
-    // 预留
   }
 }
 </script>

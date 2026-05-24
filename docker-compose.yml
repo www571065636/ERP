@@ -5,9 +5,14 @@ services:
       dockerfile: Dockerfile
     container_name: erp_backend
     ports:
-      - "8000:8000"
+      - "8002:8000"
     environment:
       - DJANGO_SETTINGS_MODULE=config.settings
+      - DJANGO_SECRET_KEY=docker-dev-secret-key-erp-2024
+      - DJANGO_DEBUG=true
+      - DJANGO_ALLOWED_HOSTS=backend,localhost,127.0.0.1,172.18.0.3
+      - CORS_ALLOW_ALL_ORIGINS=true
+      - DJANGO_ADMIN_PASSWORD=admin123
     volumes:
       - ./backend/db.sqlite3:/app/db.sqlite3
     restart: unless-stopped

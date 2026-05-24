@@ -10,7 +10,7 @@
           <div class="page-header-sub">管理员工档案、职位与薪资信息</div>
         </div>
       </div>
-      <el-button type="primary" @click="openDialog()">
+      <el-button v-if="auth.hasPermission('hr:employee:create')" type="primary" @click="openDialog()">
         <el-icon><Plus /></el-icon>新增员工
       </el-button>
     </div>
@@ -67,9 +67,9 @@
         <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <span class="action-sep">|</span>
-              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="auth.hasPermission('hr:employee:update')" text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span v-if="auth.hasPermission('hr:employee:update') && auth.hasPermission('hr:employee:delete')" class="action-sep">|</span>
+              <el-button v-if="auth.hasPermission('hr:employee:delete')" text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -82,7 +82,7 @@
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑员工' : '新增员工'"
       width="640px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" class="dialog-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dialog-form">
         <el-row :gutter="16">
           <el-col :span="12">
             <el-form-item label="工号" prop="employee_no">
@@ -155,6 +155,9 @@
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

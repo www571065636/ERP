@@ -10,7 +10,7 @@
           <div class="page-header-sub">管理仓库基本信息与负责人</div>
         </div>
       </div>
-      <el-button type="primary" @click="openDialog()">
+      <el-button v-if="auth.hasPermission('inventory:warehouse:create')" type="primary" @click="openDialog()">
         <el-icon><Plus /></el-icon>新增仓库
       </el-button>
     </div>
@@ -46,9 +46,9 @@
         <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <span class="action-sep">|</span>
-              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="auth.hasPermission('inventory:warehouse:update')" text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span v-if="auth.hasPermission('inventory:warehouse:update') && auth.hasPermission('inventory:warehouse:delete')" class="action-sep">|</span>
+              <el-button v-if="auth.hasPermission('inventory:warehouse:delete')" text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -57,7 +57,7 @@
 
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑仓库' : '新增仓库'"
       width="480px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" class="dialog-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dialog-form">
         <el-form-item label="仓库编码" prop="warehouse_code">
           <el-input v-model="form.warehouse_code" />
         </el-form-item>
@@ -70,7 +70,7 @@
           </el-select>
         </el-form-item>
         <el-form-item label="负责人">
-          <el-input v-model="form.manager_name" />
+          <el-input-number v-model="form.manager_id" :min="1" style="width:100%" />
         </el-form-item>
         <el-form-item label="地址">
           <el-input v-model="form.address" />
@@ -88,6 +88,9 @@
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -115,7 +118,7 @@ async function loadData() {
 }
 
 function openDialog(row = {}) {
-  form.value = { warehouse_type: 1, ...row }
+  form.value = { warehouse_type: 1, manager_id: row.manager_id || null, ...row }
   dialogVisible.value = true
 }
 

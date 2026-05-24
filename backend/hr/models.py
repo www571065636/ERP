@@ -7,7 +7,7 @@ class Employee(BaseModel):
     STATUS = [(1, "在职"), (2, "离职"), (3, "试用")]
     GENDERS = [(1, "男"), (2, "女")]
 
-    employee_no = models.CharField(max_length=32)
+    employee_no = models.CharField(max_length=32, unique=True)
     user_id = models.BigIntegerField(null=True, blank=True)
     real_name = models.CharField(max_length=64)
     gender = models.SmallIntegerField(choices=GENDERS, null=True, blank=True)
@@ -15,11 +15,11 @@ class Employee(BaseModel):
     id_card = models.CharField(max_length=32, blank=True, default="")
     mobile = models.CharField(max_length=20, blank=True, default="", validators=[phone_validator])
     email = models.CharField(max_length=128, blank=True, default="", validators=[email_validator])
-    dept_id = models.BigIntegerField(null=True, blank=True)
+    dept_id = models.BigIntegerField(null=True, blank=True, db_index=True)
     position = models.CharField(max_length=64, blank=True, default="")
     entry_date = models.DateField(null=True, blank=True)
     leave_date = models.DateField(null=True, blank=True)
-    emp_status = models.SmallIntegerField(choices=STATUS, default=1)
+    emp_status = models.SmallIntegerField(choices=STATUS, default=1, db_index=True)
     base_salary = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     bank_name = models.CharField(max_length=64, blank=True, default="")
     bank_account = models.CharField(max_length=64, blank=True, default="")
@@ -64,7 +64,7 @@ class Salary(BaseModel):
     income_tax = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     gross_salary = models.DecimalField(max_digits=10, decimal_places=2)
     net_salary = models.DecimalField(max_digits=10, decimal_places=2)
-    status = models.SmallIntegerField(choices=STATUS, default=0)
+    status = models.SmallIntegerField(choices=STATUS, default=0, db_index=True)
     pay_date = models.DateField(null=True, blank=True)
     remark = models.CharField(max_length=500, blank=True, default="")
 

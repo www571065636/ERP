@@ -5,7 +5,7 @@
         <div class="page-header-icon"><el-icon><UserFilled /></el-icon></div>
         <div><div class="page-header-title">角色管理</div><div class="page-header-sub">配置系统角色与数据权限</div></div>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openDialog()">新增角色</el-button>
+      <el-button v-if="auth.hasPermission('system:role:create')" type="primary" :icon="Plus" @click="openDialog()">新增角色</el-button>
     </div>
     <div class="table-card">
       <div class="table-toolbar">
@@ -36,16 +36,16 @@
         <el-table-column label="操作" width="140" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <span class="action-sep">|</span>
-              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="auth.hasPermission('system:role:update')" text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span v-if="auth.hasPermission('system:role:update') && auth.hasPermission('system:role:delete')" class="action-sep">|</span>
+              <el-button v-if="auth.hasPermission('system:role:delete')" text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
       </el-table>
     </div>
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑角色' : '新增角色'" width="480px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px" class="dialog-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dialog-form">
         <el-form-item label="角色名称" prop="role_name"><el-input v-model="form.role_name" placeholder="角色名称" /></el-form-item>
         <el-form-item label="角色编码" prop="role_code"><el-input v-model="form.role_code" placeholder="英文标识" /></el-form-item>
         <el-form-item label="数据权限">
@@ -67,6 +67,8 @@ import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus } from '@element-plus/icons-vue'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+const auth = useAuthStore()
 const loading = ref(false), saving = ref(false)
 const list = ref([]), dialogVisible = ref(false), formRef = ref(), form = ref({})
 const scopeLabels = { 1: '全部数据', 2: '本部门', 3: '本部门及下级', 4: '仅本人', 5: '自定义' }

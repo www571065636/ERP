@@ -8,7 +8,7 @@
           <div class="page-header-sub">管理系统登录账号与权限</div>
         </div>
       </div>
-      <el-button type="primary" :icon="Plus" @click="openDialog()">新增用户</el-button>
+      <el-button v-if="auth.hasPermission('system:user:create')" type="primary" :icon="Plus" @click="openDialog()">新增用户</el-button>
     </div>
     <div class="search-card">
       <el-form inline @submit.prevent="loadData">
@@ -61,11 +61,11 @@
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
-              <el-button text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
-              <span class="action-sep">|</span>
-              <el-button text :type="row.status ? 'warning' : 'success'" size="small" @click="toggleStatus(row)">{{ row.status ? '禁用' : '启用' }}</el-button>
-              <span class="action-sep">|</span>
-              <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
+              <el-button v-if="auth.hasPermission('system:user:update')" text type="primary" size="small" @click="openDialog(row)">编辑</el-button>
+              <span v-if="auth.hasPermission('system:user:update') && (auth.hasPermission('system:user:status') || auth.hasPermission('system:user:delete'))" class="action-sep">|</span>
+              <el-button v-if="auth.hasPermission('system:user:status')" text :type="row.status ? 'warning' : 'success'" size="small" @click="toggleStatus(row)">{{ row.status ? '禁用' : '启用' }}</el-button>
+              <span v-if="auth.hasPermission('system:user:status') && auth.hasPermission('system:user:delete')" class="action-sep">|</span>
+              <el-button v-if="auth.hasPermission('system:user:delete')" text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
             </div>
           </template>
         </el-table-column>
@@ -76,7 +76,7 @@
       </div>
     </div>
     <el-dialog v-model="dialogVisible" :title="form.id ? '编辑用户' : '新增用户'" width="480px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" class="dialog-form">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px" class="dialog-form">
         <el-form-item label="账号" prop="username">
           <el-input v-model="form.username" :disabled="!!form.id" placeholder="登录账号" />
         </el-form-item>
@@ -105,6 +105,8 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search } from '@element-plus/icons-vue'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+const auth = useAuthStore()
 const loading = ref(false), saving = ref(false)
 const list = ref([]), total = ref(0)
 const dialogVisible = ref(false), formRef = ref()

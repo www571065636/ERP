@@ -42,24 +42,22 @@
         </el-table-column>
         <el-table-column prop="product_code" label="产品编码" width="120" />
         <el-table-column prop="product_name" label="产品名称" min-width="160" />
-        <el-table-column prop="quantity" label="库存数量" width="100" align="right">
+        <el-table-column prop="qty_available" label="可用数量" width="100" align="right">
           <template #default="{ row }">
-            <span style="font-weight:500">{{ row.quantity }}</span>
+            <span style="font-weight:500;color:#52c41a">{{ row.qty_available }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="locked_qty" label="锁定数量" width="100" align="right">
+        <el-table-column prop="qty_reserved" label="预占数量" width="100" align="right">
           <template #default="{ row }">
-            <span style="color:#faad14">{{ row.locked_qty }}</span>
+            <span style="color:#faad14">{{ row.qty_reserved }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="可用数量" width="100" align="right">
+        <el-table-column label="在途数量" width="100" align="right">
           <template #default="{ row }">
-            <span style="color:#52c41a;font-weight:500">
-              {{ (Number(row.quantity) - Number(row.locked_qty)).toFixed(4) }}
-            </span>
+            {{ row.qty_in_transit }}
           </template>
         </el-table-column>
-        <el-table-column prop="avg_cost" label="平均成本" width="110" align="right">
+        <el-table-column prop="avg_cost" label="平均成本" width="130" align="right">
           <template #default="{ row }">
             <span style="color:#722ed1">{{ row.avg_cost ? `¥${row.avg_cost}` : '-' }}</span>
           </template>

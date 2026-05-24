@@ -10,7 +10,7 @@
           <div class="page-header-sub">管理记账凭证的录入、审核与过账</div>
         </div>
       </div>
-      <el-button type="primary" @click="openDialog()">
+      <el-button v-if="auth.hasPermission('finance:voucher:create')" type="primary" @click="openDialog()">
         <el-icon><Plus /></el-icon>新增凭证
       </el-button>
     </div>
@@ -63,13 +63,15 @@
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="viewDetail(row)">查看</el-button>
-              <template v-if="row.status === 0">
+              <template v-if="row.status === 0 && auth.hasPermission('finance:voucher:review')">
                 <span class="action-sep">|</span>
                 <el-button text type="success" size="small" @click="reviewVoucher(row)">审核</el-button>
+              </template>
+              <template v-if="row.status === 0 && auth.hasPermission('finance:voucher:delete')">
                 <span class="action-sep">|</span>
                 <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
               </template>
-              <template v-if="row.status === 1">
+              <template v-if="row.status === 1 && auth.hasPermission('finance:voucher:post')">
                 <span class="action-sep">|</span>
                 <el-button text type="primary" size="small" @click="postVoucher(row)">过账</el-button>
               </template>
@@ -85,7 +87,7 @@
 
     <el-dialog v-model="dialogVisible" :title="viewMode ? `凭证 ${form.voucher_no}` : '新增凭证'"
       width="800px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px"
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px"
         class="dialog-form" :disabled="viewMode">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -174,6 +176,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

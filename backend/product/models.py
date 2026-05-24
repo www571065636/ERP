@@ -15,7 +15,7 @@ class Unit(BaseModel):
 
 
 class Category(BaseModel):
-    parent_id = models.BigIntegerField(default=0, verbose_name="父分类ID")
+    parent_id = models.BigIntegerField(default=0, db_index=True, verbose_name="父分类ID")
     cat_name = models.CharField(max_length=64, verbose_name="分类名称")
     cat_code = models.CharField(max_length=64, blank=True, default="")
     level = models.SmallIntegerField(default=1)
@@ -34,11 +34,11 @@ class Product(BaseModel):
     PRODUCT_TYPES = [(1, "成品"), (2, "原材料"), (3, "半成品"), (4, "服务")]
 
     product_code = models.CharField(max_length=64, unique=True, verbose_name="产品编码")
-    product_name = models.CharField(max_length=128, verbose_name="产品名称")
+    product_name = models.CharField(max_length=128, db_index=True, verbose_name="产品名称")
     category = models.ForeignKey(Category, on_delete=models.PROTECT, null=True, blank=True)
     brand = models.CharField(max_length=64, blank=True, default="")
     unit = models.ForeignKey(Unit, on_delete=models.PROTECT, null=True, blank=True)
-    product_type = models.SmallIntegerField(default=1, choices=PRODUCT_TYPES)
+    product_type = models.SmallIntegerField(default=1, choices=PRODUCT_TYPES, db_index=True)
     tax_rate = models.DecimalField(max_digits=5, decimal_places=2, default=0)
     purchase_price = models.DecimalField(max_digits=15, decimal_places=4, null=True, blank=True)
     sale_price = models.DecimalField(max_digits=15, decimal_places=4, null=True, blank=True)
@@ -46,7 +46,7 @@ class Product(BaseModel):
     max_stock = models.DecimalField(max_digits=15, decimal_places=4, null=True, blank=True)
     description = models.TextField(blank=True, default="")
     image_url = models.CharField(max_length=255, blank=True, default="")
-    status = models.BooleanField(default=True)
+    status = models.BooleanField(default=True, db_index=True)
 
     class Meta:
         db_table = "prd_product"
@@ -61,7 +61,7 @@ class SKU(BaseModel):
     sku_code = models.CharField(max_length=64, unique=True)
     sku_name = models.CharField(max_length=128)
     spec_json = models.JSONField(null=True, blank=True)
-    barcode = models.CharField(max_length=64, blank=True, default="")
+    barcode = models.CharField(max_length=64, blank=True, default="", db_index=True)
     weight = models.DecimalField(max_digits=10, decimal_places=4, null=True, blank=True)
     price = models.DecimalField(max_digits=15, decimal_places=4, null=True, blank=True)
     status = models.BooleanField(default=True)

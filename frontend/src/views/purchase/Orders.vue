@@ -10,7 +10,7 @@
           <div class="page-header-sub">管理采购申请、审批与收货流程</div>
         </div>
       </div>
-      <el-button type="primary" @click="openDialog()">
+      <el-button v-if="auth.hasPermission('purchase:order:create')" type="primary" @click="openDialog()">
         <el-icon><Plus /></el-icon>新增采购单
       </el-button>
     </div>
@@ -61,15 +61,25 @@
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="viewDetail(row)">查看</el-button>
-              <template v-if="row.status === 0">
+              <template v-if="row.status === 0 && auth.hasPermission('purchase:order:submit')">
                 <span class="action-sep">|</span>
-                <el-button text type="primary" size="small" @click="submitOrder(row)">提交</el-button>
+                <el-button text type="warning" size="small" @click="submitOrder(row)">提交</el-button>
+              </template>
+              <template v-if="row.status === 0 && auth.hasPermission('purchase:order:update')">
+                <span class="action-sep">|</span>
+                <el-button text type="primary" size="small" @click="editOrder(row)">编辑</el-button>
+              </template>
+              <template v-if="row.status === 0 && auth.hasPermission('purchase:order:delete')">
                 <span class="action-sep">|</span>
                 <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
               </template>
-              <template v-if="row.status === 1">
+              <template v-if="row.status === 1 && auth.hasPermission('purchase:order:approve')">
                 <span class="action-sep">|</span>
                 <el-button text type="success" size="small" @click="approveOrder(row)">审批</el-button>
+              </template>
+              <template v-if="[2, 3].includes(row.status) && auth.hasPermission('purchase:order:approve')">
+                <span class="action-sep">|</span>
+                <el-button text type="success" size="small" @click="openReceiptDialog(row)">收货</el-button>
               </template>
             </div>
           </template>
@@ -82,7 +92,7 @@
     </div>
 
     <el-dialog v-model="dialogVisible" :title="dialogTitle" width="800px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="90px"
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px"
         class="dialog-form" :disabled="viewMode">
         <el-row :gutter="16">
           <el-col :span="12">
@@ -168,6 +178,24 @@
         <el-button type="primary" :loading="saving" @click="handleSave">保存</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="receiptVisible" title="采购收货" width="780px" destroy-on-close>
+      <el-table :data="receiptItems" border size="small">
+        <el-table-column prop="product_name" label="产品" min-width="180" />
+        <el-table-column prop="qty" label="订单数量" width="110" align="right" />
+        <el-table-column prop="received_qty" label="已收数量" width="110" align="right" />
+        <el-table-column label="本次收货" width="140">
+          <template #default="{ row }">
+            <el-input-number v-model="row.confirm_qty" :min="0" :max="row.remaining_qty" :precision="4" style="width:100%" />
+          </template>
+        </el-table-column>
+        <el-table-column prop="remaining_qty" label="未收数量" width="110" align="right" />
+      </el-table>
+      <template #footer>
+        <el-button @click="receiptVisible = false">取消</el-button>
+        <el-button type="primary" :loading="savingReceipt" @click="handleReceipt">创建并确认收货</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -176,6 +204,9 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)
@@ -188,6 +219,10 @@ const form = ref({ items: [] })
 const suppliers = ref([])
 const warehouses = ref([])
 const products = ref([])
+const receiptVisible = ref(false)
+const receiptItems = ref([])
+const currentReceiptOrder = ref(null)
+const savingReceipt = ref(false)
 const query = reactive({ search: '', status: '', page: 1, page_size: 20 })
 const statusLabels = { 0: '草稿', 1: '待审批', 2: '已审批', 3: '部分收货', 4: '全部收货', 9: '已取消' }
 const statusTypes = { 0: 'info', 1: 'warning', 2: 'success', 3: 'primary', 4: 'success', 9: 'danger' }
@@ -235,9 +270,37 @@ async function loadOptions() {
 
 function openDialog(row = {}) {
   viewMode.value = false
-  form.value = { order_date: dayjs().format('YYYY-MM-DD'), items: [], ...row }
+  form.value = { order_date: dayjs().format('YYYY-MM-DD'), currency: 'CNY', items: [], ...row }
   dialogVisible.value = true
   loadOptions()
+}
+
+async function editOrder(row) {
+  viewMode.value = false
+  await loadOptions()
+  const res = await http.get(`/purchase/orders/${row.id}/`)
+  form.value = {
+    id: res.data.id,
+    supplier: res.data.supplier,
+    warehouse_id: res.data.warehouse_id,
+    order_date: res.data.order_date,
+    expected_date: res.data.expected_date,
+    currency: res.data.currency || 'CNY',
+    remark: res.data.remark,
+    items: (res.data.items || []).map(item => ({
+      id: item.id,
+      product_id: item.product_id,
+      sku_id: item.sku_id,
+      unit_id: item.unit_id,
+      qty: Number(item.qty),
+      unit_price: Number(item.unit_price),
+      tax_rate: Number(item.tax_rate || 0),
+      amount: Number(item.amount || 0),
+      received_qty: Number(item.received_qty || 0),
+      remark: item.remark || '',
+    })),
+  }
+  dialogVisible.value = true
 }
 
 function viewDetail(row) {
@@ -250,7 +313,7 @@ function viewDetail(row) {
 }
 
 function addItem() {
-  form.value.items.push({ product_id: null, unit_id: 1, qty: 1, unit_price: 0, amount: 0 })
+  form.value.items.push({ product_id: null, sku_id: null, unit_id: 1, qty: 1, unit_price: 0, tax_rate: 0, amount: 0, remark: '' })
 }
 
 function onProductChange(row) {
@@ -272,7 +335,24 @@ async function handleSave() {
   if (form.value.items.some(i => !i.product_id)) return ElMessage.warning('请为所有明细行选择产品')
   saving.value = true
   try {
-    const payload = { ...form.value, total_amount: totalAmount.value }
+    const payload = {
+      supplier: form.value.supplier,
+      warehouse_id: form.value.warehouse_id,
+      order_date: form.value.order_date,
+      expected_date: form.value.expected_date,
+      currency: form.value.currency || 'CNY',
+      remark: form.value.remark || '',
+      items: form.value.items.map(item => ({
+        ...(item.id ? { id: item.id } : {}),
+        product_id: item.product_id,
+        sku_id: item.sku_id || null,
+        unit_id: item.unit_id || 1,
+        qty: item.qty,
+        unit_price: item.unit_price,
+        tax_rate: item.tax_rate || 0,
+        remark: item.remark || '',
+      })),
+    }
     if (form.value.id) {
       await http.put(`/purchase/orders/${form.value.id}/`, payload)
     } else {
@@ -289,6 +369,7 @@ async function handleSave() {
 }
 
 async function submitOrder(row) {
+  await ElMessageBox.confirm('确认提交采购单？提交后将进入审批。', '提示', { type: 'warning' })
   await http.post(`/purchase/orders/${row.id}/submit/`)
   ElMessage.success('提交成功')
   loadData()
@@ -308,7 +389,48 @@ async function handleDelete(row) {
   loadData()
 }
 
-onMounted(loadData)
+async function openReceiptDialog(row) {
+  const res = await http.get(`/purchase/orders/${row.id}/`)
+  currentReceiptOrder.value = res.data
+  receiptItems.value = (res.data.items || []).map(item => ({
+    ...item,
+    product_name: products.value.find(p => p.id === item.product_id)?.product_name || `产品#${item.product_id}`,
+    remaining_qty: Math.max(Number(item.qty) - Number(item.received_qty || 0), 0),
+    confirm_qty: Math.max(Number(item.qty) - Number(item.received_qty || 0), 0),
+  })).filter(item => item.remaining_qty > 0)
+  if (!receiptItems.value.length) {
+    ElMessage.warning('该采购单已全部收货')
+    return
+  }
+  receiptVisible.value = true
+}
+
+async function handleReceipt() {
+  const items = receiptItems.value
+    .filter(item => Number(item.confirm_qty) > 0)
+    .map(item => ({ order_item_id: item.id, qty: item.confirm_qty }))
+  if (!items.length) {
+    ElMessage.warning('请填写本次收货数量')
+    return
+  }
+  savingReceipt.value = true
+  try {
+    const receipt = await http.post(`/purchase/orders/${currentReceiptOrder.value.id}/receipts/`, { items })
+    await http.post(`/purchase/orders/${currentReceiptOrder.value.id}/receipts/${receipt.data.id}/confirm/`)
+    ElMessage.success('收货成功')
+    receiptVisible.value = false
+    loadData()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    savingReceipt.value = false
+  }
+}
+
+onMounted(async () => {
+  await loadOptions()
+  loadData()
+})
 </script>
 
 <style scoped>

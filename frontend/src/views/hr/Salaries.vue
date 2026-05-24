@@ -11,8 +11,8 @@
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <el-button @click="generateVisible = true">批量生成薪资</el-button>
-        <el-button type="primary" @click="openDialog()">
+        <el-button v-if="auth.hasPermission('hr:salary:generate')" @click="generateVisible = true">批量生成薪资</el-button>
+        <el-button v-if="auth.hasPermission('hr:salary:create')" type="primary" @click="openDialog()">
           <el-icon><Plus /></el-icon>新增薪资单
         </el-button>
       </div>
@@ -84,9 +84,11 @@
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="openDialog(row)">查看</el-button>
-              <template v-if="row.status === 0">
+              <template v-if="row.status === 0 && auth.hasPermission('hr:salary:review')">
                 <span class="action-sep">|</span>
                 <el-button text type="success" size="small" @click="reviewSalary(row)">审核</el-button>
+              </template>
+              <template v-if="row.status === 0 && auth.hasPermission('hr:salary:delete')">
                 <span class="action-sep">|</span>
                 <el-button text type="danger" size="small" @click="handleDelete(row)">删除</el-button>
               </template>
@@ -162,7 +164,7 @@
     </el-dialog>
 
     <el-dialog v-model="generateVisible" title="批量生成薪资单" width="400px" destroy-on-close>
-      <el-form :model="genForm" label-width="90px" class="dialog-form">
+      <el-form :model="genForm" label-width="100px" class="dialog-form">
         <el-form-item label="薪资期间">
           <el-date-picker v-model="genForm.period" type="month" value-format="YYYY-MM" style="width:100%" />
         </el-form-item>
@@ -180,6 +182,9 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
 import http from '@/utils/http'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const loading = ref(false)
 const saving = ref(false)

@@ -5,7 +5,7 @@ from common.validators import phone_validator, email_validator
 
 class Customer(BaseModel):
     customer_code = models.CharField(max_length=64, unique=True)
-    customer_name = models.CharField(max_length=128)
+    customer_name = models.CharField(max_length=128, db_index=True)
     customer_type = models.SmallIntegerField(default=1)
     contact_person = models.CharField(max_length=64, blank=True, default="")
     contact_phone = models.CharField(max_length=20, blank=True, default="", validators=[phone_validator])
@@ -34,13 +34,13 @@ class SalesOrder(BaseModel):
     customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
     salesperson_id = models.BigIntegerField()
     warehouse_id = models.BigIntegerField()
-    order_date = models.DateField()
+    order_date = models.DateField(db_index=True)
     delivery_date = models.DateField(null=True, blank=True)
     currency = models.CharField(max_length=8, default="CNY")
     total_qty = models.DecimalField(max_digits=15, decimal_places=4, default=0)
     total_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     tax_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
-    status = models.SmallIntegerField(default=0, choices=STATUS_CHOICES)
+    status = models.SmallIntegerField(default=0, choices=STATUS_CHOICES, db_index=True)
     approve_by = models.BigIntegerField(null=True, blank=True)
     approve_at = models.DateTimeField(null=True, blank=True)
     remark = models.CharField(max_length=500, blank=True, default="")
@@ -92,3 +92,16 @@ class Delivery(BaseModel):
 
     def __str__(self):
         return self.delivery_no
+
+
+class DeliveryItem(models.Model):
+    delivery = models.ForeignKey(Delivery, on_delete=models.CASCADE, related_name="items")
+    order_item = models.ForeignKey(SalesOrderItem, on_delete=models.PROTECT)
+    product_id = models.BigIntegerField()
+    sku_id = models.BigIntegerField(null=True, blank=True)
+    unit_id = models.BigIntegerField()
+    qty = models.DecimalField(max_digits=15, decimal_places=4)
+    remark = models.CharField(max_length=255, blank=True, default="")
+
+    class Meta:
+        db_table = "sal_delivery_item"
