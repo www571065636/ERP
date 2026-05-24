@@ -23,6 +23,7 @@ class VoucherItemSerializer(drf_serializers.ModelSerializer):
         model = VoucherItem
         fields = ["id", "line_no", "account", "account_code", "account_name",
                   "summary", "debit_amount", "credit_amount"]
+        read_only_fields = ["id", "line_no"]
 
 
 class VoucherSerializer(drf_serializers.ModelSerializer):
@@ -42,7 +43,8 @@ class VoucherCreateSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = Voucher
-        fields = ["voucher_type", "voucher_date", "remark", "items"]
+        fields = ["id", "voucher_no", "voucher_type", "voucher_date", "remark", "items"]
+        read_only_fields = ["id", "voucher_no"]
 
     def validate_items(self, items):
         if not items:

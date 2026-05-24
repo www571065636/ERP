@@ -11,7 +11,8 @@
         </div>
       </div>
       <div style="display:flex;gap:8px">
-        <el-button v-if="auth.hasPermission('hr:salary:generate')" @click="generateVisible = true">批量生成薪资</el-button>
+        <el-button v-if="auth.hasPermission('hr:salary:generate')" type="primary" @click="generateVisible = true">批量生成薪资</el-button>
+        <el-button v-if="auth.hasPermission('hr:salary:batch-pay')" type="primary" @click="payVisible = true">批量发放</el-button>
         <el-button v-if="auth.hasPermission('hr:salary:create')" type="primary" @click="openDialog()">
           <el-icon><Plus /></el-icon>新增薪资单
         </el-button>
@@ -87,6 +88,10 @@
               <template v-if="row.status === 0 && auth.hasPermission('hr:salary:review')">
                 <span class="action-sep">|</span>
                 <el-button text type="success" size="small" @click="reviewSalary(row)">审核</el-button>
+              </template>
+              <template v-if="row.status === 1 && auth.hasPermission('hr:salary:batch-pay')">
+                <span class="action-sep">|</span>
+                <el-button text type="warning" size="small" @click="paySalary(row)">发放</el-button>
               </template>
               <template v-if="row.status === 0 && auth.hasPermission('hr:salary:delete')">
                 <span class="action-sep">|</span>
@@ -174,6 +179,21 @@
         <el-button type="primary" :loading="generating" @click="handleGenerate">生成</el-button>
       </template>
     </el-dialog>
+
+    <el-dialog v-model="payVisible" title="批量发放薪资" width="400px" destroy-on-close>
+      <el-form :model="payForm" label-width="100px" class="dialog-form">
+        <el-form-item label="薪资期间">
+          <el-date-picker v-model="payForm.period" type="month" value-format="YYYY-MM" style="width:100%" />
+        </el-form-item>
+        <el-form-item label="发放日期">
+          <el-date-picker v-model="payForm.pay_date" type="date" value-format="YYYY-MM-DD" style="width:100%" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="payVisible = false">取消</el-button>
+        <el-button type="warning" :loading="paying" @click="handleBatchPay">确认发放</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -189,14 +209,17 @@ const auth = useAuthStore()
 const loading = ref(false)
 const saving = ref(false)
 const generating = ref(false)
+const paying = ref(false)
 const list = ref([])
 const total = ref(0)
 const dialogVisible = ref(false)
 const generateVisible = ref(false)
+const payVisible = ref(false)
 const formRef = ref()
 const form = ref({})
 const employees = ref([])
 const genForm = ref({ period: dayjs().format('YYYY-MM') })
+const payForm = ref({ period: dayjs().format('YYYY-MM'), pay_date: dayjs().format('YYYY-MM-DD') })
 const query = reactive({ period: '', status: '', page: 1, page_size: 20 })
 const statusTypes = { 0: 'info', 1: 'warning', 2: 'success' }
 const rules = {
@@ -269,6 +292,34 @@ async function handleGenerate() {
   } finally {
     generating.value = false
   }
+}
+
+async function handleBatchPay() {
+  if (!payForm.value.period) return ElMessage.warning('请选择薪资期间')
+  paying.value = true
+  try {
+    const res = await http.post('/hr/salaries/batch_pay/', payForm.value)
+    ElMessage.success(res.data.msg)
+    payVisible.value = false
+    loadData()
+  } catch (e) {
+    ElMessage.error(e.message)
+  } finally {
+    paying.value = false
+  }
+}
+
+async function paySalary(row) {
+  await ElMessageBox.confirm(
+    `确认发放 "${row.employee_name}" 的薪资单？`,
+    '提示',
+    { type: 'warning' }
+  )
+  await http.post(`/hr/salaries/${row.id}/pay/`, {
+    pay_date: dayjs().format('YYYY-MM-DD')
+  })
+  ElMessage.success('发放成功')
+  loadData()
 }
 
 async function loadEmployees() {

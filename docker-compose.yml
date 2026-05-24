@@ -15,6 +15,18 @@ services:
       - DJANGO_ADMIN_PASSWORD=admin123
     volumes:
       - ./backend/db.sqlite3:/app/db.sqlite3
+      - ./backend/config:/app/config
+      - ./backend/common:/app/common
+      - ./backend/system:/app/system
+      - ./backend/product:/app/product
+      - ./backend/purchase:/app/purchase
+      - ./backend/sales:/app/sales
+      - ./backend/inventory:/app/inventory
+      - ./backend/finance:/app/finance
+      - ./backend/hr:/app/hr
+      - ./backend/manage.py:/app/manage.py
+      - ./backend/seed_data.py:/app/seed_data.py
+      - ./backend/requirements.txt:/app/requirements.txt
     restart: unless-stopped
 
   frontend:
@@ -26,6 +38,8 @@ services:
       - "5173:5173"
     environment:
       - VITE_API_TARGET=http://backend:8000
+    volumes:
+      - ./frontend/src:/app/src
     depends_on:
       - backend
     restart: unless-stopped

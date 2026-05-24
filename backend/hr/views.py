@@ -127,6 +127,16 @@ class SalaryViewSet(viewsets.ModelViewSet):
                 created += 1
         return ok(data={"generated": created, "msg": f"已生成 {created} 条薪资单"})
 
+    @action(detail=True, methods=["post"])
+    def pay(self, request, pk=None):
+        salary = self.get_object()
+        if salary.status != 1:
+            return fail("只有已审核状态可以发放")
+        salary.status = 2
+        salary.pay_date = request.data.get("pay_date") or datetime.date.today()
+        salary.save(update_fields=["status", "pay_date"])
+        return ok(msg="发放成功")
+
     @action(detail=False, methods=["post"])
     def batch_pay(self, request):
         period = request.data.get("period")

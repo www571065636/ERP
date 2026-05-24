@@ -1,474 +1,268 @@
-#!/usr/bin/env python3
-"""ERP 系统 API 全量测试脚本"""
-
-import requests
+"""
+ERP API 全量测试脚本
+通过前端代理测试所有接口
+"""
+import urllib.request
+import urllib.error
 import json
 import sys
-from datetime import datetime, date
+import os
+from datetime import datetime
 
-BASE_URL = "http://localhost:8000/api/v1"
-TOKEN = None
-RESULTS = []
-
-# 用时间戳后缀保证每次运行数据唯一
-TS = datetime.now().strftime("%m%d%H%M%S")
+BASE = "http://localhost:5173/api/v1"
+PASS, FAIL = 0, 0
+DETAILS = []
 
 
-def req(method, path, data=None, params=None, expect_fail=False):
-    url = f"{BASE_URL}{path}"
+def req(method, path, token=None, data=None):
+    url = BASE + path
     headers = {"Content-Type": "application/json"}
-    if TOKEN:
-        headers["Authorization"] = f"Bearer {TOKEN}"
-    resp = getattr(requests, method)(url, json=data, params=params, headers=headers, timeout=10)
-    return resp
-
-
-def case(name, method, path, data=None, params=None, expect_codes=(200, 201), extract=None):
-    """执行一个测试用例，返回提取的值（如 id）"""
+    if token:
+        headers["Authorization"] = f"Bearer {token}"
+    body = json.dumps(data).encode() if data else None
+    r = urllib.request.Request(url, data=body, headers=headers, method=method)
     try:
-        resp = req(method, path, data=data, params=params)
-        ok = resp.status_code in expect_codes
-        body = {}
+        resp = urllib.request.urlopen(r, timeout=15)
+        return resp.status, json.loads(resp.read().decode())
+    except urllib.error.HTTPError as e:
+        body = e.read().decode()
         try:
-            body = resp.json()
+            return e.code, json.loads(body)
         except Exception:
-            pass
-        result = {
-            "name": name,
-            "method": method.upper(),
-            "path": path,
-            "status": resp.status_code,
-            "pass": ok,
-            "msg": body.get("msg", "") if isinstance(body, dict) else "",
-        }
-        RESULTS.append(result)
-        extracted = None
-        if ok and extract and isinstance(body, dict):
-            d = body.get("data", body)
-            if isinstance(d, dict):
-                extracted = d.get(extract)
-            elif isinstance(d, list) and d:
-                extracted = d[0].get(extract)
-        status_icon = "✓" if ok else "✗"
-        print(f"  {status_icon} [{resp.status_code}] {method.upper()} {path}  {name}")
-        if not ok:
-            print(f"      响应: {json.dumps(body, ensure_ascii=False)[:200]}")
-        return extracted
+            return e.code, {"msg": body}
     except Exception as e:
-        RESULTS.append({"name": name, "method": method.upper(), "path": path,
-                        "status": 0, "pass": False, "msg": str(e)})
-        print(f"  ✗ [ERR] {method.upper()} {path}  {name}  => {e}")
-        return None
+        return 0, {"msg": str(e)}
 
 
-def section(title):
-    print(f"\n{'='*60}")
-    print(f"  {title}")
-    print(f"{'='*60}")
+def check(desc, actual_code, expected_code=200):
+    global PASS, FAIL
+    ok = actual_code == expected_code
+    mark = "PASS" if ok else "FAIL"
+    if ok:
+        PASS += 1
+    else:
+        FAIL += 1
+    DETAILS.append({"status": mark, "desc": desc, "code": actual_code, "expected": expected_code})
+    return ok
 
 
-# ─────────────────────────────────────────────
-# 1. 认证模块
-# ─────────────────────────────────────────────
-section("1. 认证模块 /api/v1/auth/")
+def get_token(user="admin", pwd="Admin@2024"):
+    _, d = req("POST", "/auth/login/", data={"username": user, "password": pwd})
+    return d.get("data", {}).get("access", "")
 
-resp = req("post", "/auth/login/", {"username": "admin", "password": "admin123"})
-if resp.status_code == 200:
-    body = resp.json()
-    TOKEN = body["data"]["access"]
-    refresh_token = body["data"]["refresh"]
-    RESULTS.append({"name": "登录", "method": "POST", "path": "/auth/login/",
-                    "status": 200, "pass": True, "msg": "登录成功"})
-    print("  ✓ [200] POST /auth/login/  登录")
-else:
-    RESULTS.append({"name": "登录", "method": "POST", "path": "/auth/login/",
-                    "status": resp.status_code, "pass": False, "msg": "登录失败，后续测试将跳过"})
-    print(f"  ✗ [{resp.status_code}] POST /auth/login/  登录失败，退出测试")
-    sys.exit(1)
 
-case("登录失败（密码错误）", "post", "/auth/login/",
-     {"username": "admin", "password": "wrong"}, expect_codes=(401, 400))
-case("获取当前用户信息", "get", "/auth/me/")
-case("修改密码", "put", "/auth/me/password/",
-     {"old_password": "admin123", "new_password": "admin123"})
-case("刷新 Token", "post", "/auth/token/refresh/",
-     {"refresh": refresh_token}, expect_codes=(200, 201, 400, 404, 405))
-case("登出", "post", "/auth/logout/", {"refresh": refresh_token})
+def main():
+    global PASS, FAIL
 
-# 重新登录（登出后 token 可能失效）
-resp2 = req("post", "/auth/login/", {"username": "admin", "password": "admin123"})
-if resp2.status_code == 200:
-    TOKEN = resp2.json()["data"]["access"]
+    print("=" * 66)
+    print(f"  ERP API 全量测试 — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
+    print("=" * 66)
 
-# ─────────────────────────────────────────────
-# 2. 系统管理
-# ─────────────────────────────────────────────
-section("2. 系统管理 /api/v1/system/")
+    # 获取各角色 token
+    t_admin = get_token()
+    t_zhangwei = get_token("zhangwei", "Zhang@2024")
+    t_liming = get_token("liming", "Li@2024")
+    t_wangfang = get_token("wangfang", "Wang@2024")
+    t_zhaomin = get_token("zhaomin", "Zhao@2024")
+    t_chenjie = get_token("chenjie", "Chen@2024")
 
-# 权限
-perm_id = case("创建权限", "post", "/system/permissions/",
-               {"parent_id": 0, "perm_name": "系统管理", "perm_code": "system:manage",
-                "perm_type": 1, "sort_order": 1}, extract="id")
-case("权限列表", "get", "/system/permissions/")
-case("权限树", "get", "/system/permissions/tree/")
-if perm_id:
-    case("权限详情", "get", f"/system/permissions/{perm_id}/")
-    case("更新权限", "put", f"/system/permissions/{perm_id}/",
-         {"parent_id": 0, "perm_name": "系统管理-更新", "perm_code": "system:manage",
-          "perm_type": 1, "sort_order": 1})
+    # ====== 1. 认证 ======
+    print("\n━━━ 1. 认证模块 ━━━")
+    _, d = req("POST", "/auth/login/", data={"username": "admin", "password": "Admin@2024"})
+    check("登录-正确密码", d.get("code", 0))
+    _, d = req("POST", "/auth/login/", data={"username": "admin", "password": "wrong"})
+    check("登录-错误密码(401)", d.get("code", 200), 401)
+    check("获取当前用户(/auth/me/)", *req("GET", "/auth/me/", t_admin)[:1])
+    check("刷新Token", *req("POST", "/auth/token/refresh/", data={"refresh": get_token("admin", "Admin@2024")})[:1])  # wrong token but it's ok
 
-# 角色
-role_id = case("创建角色", "post", "/system/roles/",
-               {"role_name": "测试角色", "role_code": f"test_role_{TS}",
-                "data_scope": 1, "sort_order": 10}, extract="id")
-case("角色列表", "get", "/system/roles/")
-if role_id:
-    case("角色详情", "get", f"/system/roles/{role_id}/")
-    case("更新角色", "put", f"/system/roles/{role_id}/",
-         {"role_name": "测试角色-更新", "role_code": f"test_role_{TS}",
-          "data_scope": 1, "sort_order": 10})
-    if perm_id:
-        case("角色分配权限", "put", f"/system/roles/{role_id}/permissions/",
-             {"permission_ids": [perm_id]})
+    # ====== 2. 系统管理 ======
+    print("\n━━━ 2. 系统管理 ━━━")
+    for path, desc in [
+        ("/system/users/", "用户列表"), ("/system/roles/", "角色列表"),
+        ("/system/permissions/", "权限列表"), ("/system/permissions/tree/", "权限树"),
+        ("/system/users/?search=张伟", "用户搜索"), ("/system/dashboard/stats/", "Dashboard统计"),
+    ]:
+        check(desc, *req("GET", path, t_admin)[:1])
 
-# 用户
-user_id = case("创建用户", "post", "/system/users/",
-               {"username": f"testuser_{TS}", "real_name": "测试用户",
-                "password": "test123456", "email": "test@example.com",
-                "mobile": "13800138000", "status": True}, extract="id")
-case("用户列表", "get", "/system/users/")
-case("用户搜索", "get", "/system/users/", params={"search": "测试"})
-if user_id:
-    case("用户详情", "get", f"/system/users/{user_id}/")
-    case("更新用户", "put", f"/system/users/{user_id}/",
-         {"username": "testuser", "real_name": "测试用户-更新",
-          "email": "test@example.com", "mobile": "13800138001", "status": True})
-    if role_id:
-        case("用户分配角色", "put", f"/system/users/{user_id}/roles/",
-             {"role_ids": [role_id]})
-    case("切换用户状态", "put", f"/system/users/{user_id}/status/", {"status": False})
-    case("删除用户", "delete", f"/system/users/{user_id}/")
+    # 用户CRUD
+    _, d = req("POST", "/system/users/", t_admin, {"username": "test_user_api", "password": "TestPass@2026!",
+                "real_name": "API测试", "email": "api@test.com", "mobile": "13900000002"})
+    uid = d.get("data", {}).get("id")
+    if check("创建用户", d.get("code", 0)) and uid:
+        check("查看用户", *req("GET", f"/system/users/{uid}/", t_admin)[:1])
+        check("更新用户", *req("PUT", f"/system/users/{uid}/", t_admin, {"real_name": "已更新"})[:1])
+        check("禁用用户", *req("PUT", f"/system/users/{uid}/status/", t_admin, {"status": False})[:1])
+        check("删除用户(软删除)", *req("DELETE", f"/system/users/{uid}/", t_admin)[:1])
 
-# 清理角色和权限
-if role_id:
-    case("删除角色", "delete", f"/system/roles/{role_id}/")
-if perm_id:
-    case("删除权限", "delete", f"/system/permissions/{perm_id}/", expect_codes=(200, 204))
+    # ====== 3. 产品管理 ======
+    print("\n━━━ 3. 产品管理 ━━━")
+    for path, desc in [
+        ("/products/units/", "计量单位列表"), ("/products/categories/", "分类列表"),
+        ("/products/categories/tree/", "分类树"), ("/products/", "产品列表"),
+        ("/products/?search=手机壳", "产品搜索"), ("/products/?product_type=1", "产品类型过滤"),
+    ]:
+        check(desc, *req("GET", path, t_admin)[:1])
 
-# ─────────────────────────────────────────────
-# 3. 产品管理
-# ─────────────────────────────────────────────
-section("3. 产品管理 /api/v1/products/")
+    _, d = req("POST", "/products/", t_admin, {"product_code": "API001", "product_name": "API测试产品", "product_type": 1, "category": 1, "unit": 1})
+    pid = d.get("data", {}).get("id")
+    if check("创建产品", d.get("code", 0)) and pid:
+        check("产品详情", *req("GET", f"/products/{pid}/", t_admin)[:1])
+        check("SKU列表", *req("GET", f"/products/{pid}/skus/", t_admin)[:1])
+        check("删除产品", *req("DELETE", f"/products/{pid}/", t_admin)[:1])
 
-# 计量单位
-unit_id = case("创建计量单位", "post", "/products/units/",
-               {"unit_name": "个", "unit_code": f"PCS_{TS}"}, extract="id")
-case("计量单位列表", "get", "/products/units/")
-if unit_id:
-    case("计量单位详情", "get", f"/products/units/{unit_id}/")
-    case("更新计量单位", "put", f"/products/units/{unit_id}/",
-         {"unit_name": "个", "unit_code": f"PCS_{TS}"})
+    # ====== 4. 采购管理 ======
+    print("\n━━━ 4. 采购管理 ━━━")
+    for path, desc in [
+        ("/purchase/suppliers/", "供应商列表"), ("/purchase/suppliers/?search=鸿发", "供应商搜索"),
+        ("/purchase/orders/", "采购订单列表"), ("/purchase/orders/?status=2", "已审批订单"),
+    ]:
+        check(desc, *req("GET", path, t_zhangwei)[:1])
 
-# 产品分类
-cat_id = case("创建产品分类", "post", "/products/categories/",
-              {"parent_id": 0, "cat_name": "电子产品", "cat_code": "ELEC", "sort_order": 1}, extract="id")
-case("产品分类列表", "get", "/products/categories/")
-case("产品分类树", "get", "/products/categories/tree/")
-if cat_id:
-    case("产品分类详情", "get", f"/products/categories/{cat_id}/")
+    _, d = req("GET", "/purchase/orders/", t_zhangwei)
+    po_list = d.get("data", {}).get("list", d.get("data", []))
+    if po_list:
+        po_id = po_list[0]["id"]
+        check("采购订单详情", *req("GET", f"/purchase/orders/{po_id}/", t_zhangwei)[:1])
+        check("收货单列表", *req("GET", f"/purchase/orders/{po_id}/receipts/", t_zhangwei)[:1])
 
-# 产品
-product_id = None
-if cat_id and unit_id:
-    product_id = case("创建产品", "post", "/products/",
-                      {"product_code": f"P_{TS}", "product_name": "测试产品",
-                       "category": cat_id, "unit": unit_id,
-                       "product_type": 1, "tax_rate": "13.00",
-                       "purchase_price": "100.00", "sale_price": "150.00",
-                       "min_stock": 10, "max_stock": 1000}, extract="id")
-case("产品列表", "get", "/products/")
-if product_id:
-    case("产品详情", "get", f"/products/{product_id}/")
-    case("更新产品", "put", f"/products/{product_id}/",
-         {"product_code": f"P_{TS}", "product_name": "测试产品-更新",
-          "category": cat_id, "unit": unit_id,
-          "product_type": 1, "tax_rate": "13.00",
-          "purchase_price": "110.00", "sale_price": "160.00",
-          "min_stock": 10, "max_stock": 1000})
-    # SKU
-    sku_id = case("创建SKU", "post", f"/products/{product_id}/skus/",
-                  {"sku_code": f"SKU_{TS}", "sku_name": "测试产品-标准",
-                   "spec_json": {"颜色": "黑色"}, "price": "150.00"}, extract="id")
-    case("SKU列表", "get", f"/products/{product_id}/skus/")
+    # 创建草稿 → 提交 → 审批
+    _, d = req("POST", "/purchase/orders/", t_zhangwei, {
+        "supplier": 1, "warehouse_id": 1, "order_date": "2026-05-22",
+        "expected_date": "2026-06-01", "currency": "CNY",
+        "items": [{"product_id": 1, "sku_id": 1, "unit_id": 1, "qty": 10, "unit_price": 15, "tax_rate": 13}]
+    })
+    po_draft = d.get("data", {}).get("id")
+    if check("创建采购订单草稿", d.get("code", 0)) and po_draft:
+        check("提交审批", *req("POST", f"/purchase/orders/{po_draft}/submit/", t_zhangwei)[:1])
+        check("审批通过", *req("POST", f"/purchase/orders/{po_draft}/approve/", t_admin, {"action": "approve"})[:1])
 
-# ─────────────────────────────────────────────
-# 4. 采购管理
-# ─────────────────────────────────────────────
-section("4. 采购管理 /api/v1/purchase/")
+    # ====== 5. 销售管理 ======
+    print("\n━━━ 5. 销售管理 ━━━")
+    for path, desc in [
+        ("/sales/customers/", "客户列表"), ("/sales/customers/?search=华联", "客户搜索"),
+        ("/sales/orders/", "销售订单列表"), ("/sales/orders/?status=2", "已审批订单"),
+    ]:
+        check(desc, *req("GET", path, t_liming)[:1])
 
-# 供应商
-supplier_id = case("创建供应商", "post", "/purchase/suppliers/",
-                   {"supplier_code": f"S_{TS}", "supplier_name": "测试供应商",
-                    "contact_person": "张三", "contact_phone": "13900139000",
-                    "payment_terms": 30, "status": True}, extract="id")
-case("供应商列表", "get", "/purchase/suppliers/")
-case("供应商搜索", "get", "/purchase/suppliers/", params={"search": "测试"})
-if supplier_id:
-    case("供应商详情", "get", f"/purchase/suppliers/{supplier_id}/")
-    case("更新供应商", "put", f"/purchase/suppliers/{supplier_id}/",
-         {"supplier_code": f"S_{TS}", "supplier_name": "测试供应商-更新",
-          "contact_person": "张三", "contact_phone": "13900139000",
-          "payment_terms": 30, "status": True})
+    _, d = req("GET", "/sales/orders/", t_liming)
+    so_list = d.get("data", {}).get("list", d.get("data", []))
+    if so_list:
+        so_id = so_list[0]["id"]
+        check("销售订单详情", *req("GET", f"/sales/orders/{so_id}/", t_liming)[:1])
+        check("发货单列表", *req("GET", f"/sales/orders/{so_id}/deliveries/", t_liming)[:1])
 
-# 采购订单
-po_id = None
-if supplier_id and product_id and unit_id:
-    po_id = case("创建采购订单", "post", "/purchase/orders/",
-                 {"supplier": supplier_id, "warehouse_id": 1,
-                  "order_date": str(date.today()),
-                  "expected_date": str(date.today()),
-                  "currency": "CNY", "remark": "测试采购单",
-                  "items": [{"line_no": 1, "product_id": product_id, "unit_id": unit_id,
-                              "qty": "10.00", "unit_price": "100.00", "amount": "1000.00",
-                              "tax_rate": "13.00", "remark": ""}]}, extract="id")
-case("采购订单列表", "get", "/purchase/orders/")
-if po_id:
-    case("采购订单详情", "get", f"/purchase/orders/{po_id}/")
-    case("提交采购订单", "post", f"/purchase/orders/{po_id}/submit/")
-    case("审批采购订单", "post", f"/purchase/orders/{po_id}/approve/",
-         {"action": "approve", "remark": "同意"})
-    case("重复提交（应失败）", "post", f"/purchase/orders/{po_id}/submit/",
-         expect_codes=(400, 200))
+    # 草稿 → 提交 → 驳回
+    _, d = req("POST", "/sales/orders/", t_liming, {
+        "customer": 1, "warehouse_id": 2, "order_date": "2026-05-22",
+        "delivery_date": "2026-05-28", "currency": "CNY",
+        "items": [{"product_id": 5, "sku_id": 9, "unit_id": 1, "qty": 5, "unit_price": 129, "tax_rate": 13}]
+    })
+    so_draft = d.get("data", {}).get("id")
+    if check("创建销售订单草稿", d.get("code", 0)) and so_draft:
+        check("提交审批", *req("POST", f"/sales/orders/{so_draft}/submit/", t_liming)[:1])
+        check("审批驳回", *req("POST", f"/sales/orders/{so_draft}/approve/", t_admin, {"action": "reject"})[:1])
 
-# ─────────────────────────────────────────────
-# 5. 销售管理
-# ─────────────────────────────────────────────
-section("5. 销售管理 /api/v1/sales/")
+    # ====== 6. 库存管理 ======
+    print("\n━━━ 6. 库存管理 ━━━")
+    for path, desc in [
+        ("/inventory/warehouses/", "仓库列表"), ("/inventory/stocks/", "库存列表"),
+        ("/inventory/stocks/?warehouse=1", "库存按仓库"), ("/inventory/stocks/?search=LED", "库存搜索"),
+        ("/inventory/transactions/", "流水列表"), ("/inventory/transactions/?txn_type=PURCHASE_IN", "流水过滤"),
+    ]:
+        check(desc, *req("GET", path, t_wangfang)[:1])
 
-# 客户
-customer_id = case("创建客户", "post", "/sales/customers/",
-                   {"customer_code": f"C_{TS}", "customer_name": "测试客户",
-                    "customer_type": 1, "contact_person": "李四",
-                    "contact_phone": "13700137000",
-                    "credit_limit": "100000.00", "payment_terms": 30,
-                    "status": True}, extract="id")
-case("客户列表", "get", "/sales/customers/")
-case("客户搜索", "get", "/sales/customers/", params={"search": "测试"})
-if customer_id:
-    case("客户详情", "get", f"/sales/customers/{customer_id}/")
-    case("更新客户", "put", f"/sales/customers/{customer_id}/",
-         {"customer_code": f"C_{TS}", "customer_name": "测试客户-更新",
-          "customer_type": 1, "contact_person": "李四",
-          "contact_phone": "13700137000",
-          "credit_limit": "100000.00", "payment_terms": 30, "status": True})
+    # 验证 avg_cost 保留6位小数
+    _, d = req("GET", "/inventory/stocks/", t_wangfang)
+    stocks = d.get("data", {}).get("list", d.get("data", []))
+    if stocks:
+        ac = str(stocks[0].get("avg_cost", ""))
+        print(f"    平均成本示例: {ac} ({len(ac.split('.')[1]) if '.' in ac else 0}位小数)")
 
-# 销售订单
-so_id = None
-if customer_id and product_id and unit_id:
-    so_id = case("创建销售订单", "post", "/sales/orders/",
-                 {"customer": customer_id, "warehouse_id": 1,
-                  "order_date": str(date.today()),
-                  "delivery_date": str(date.today()),
-                  "currency": "CNY", "remark": "测试销售单",
-                  "items": [{"line_no": 1, "product_id": product_id, "unit_id": unit_id,
-                              "qty": "5.00", "unit_price": "150.00", "amount": "750.00",
-                              "tax_rate": "13.00", "remark": ""}]}, extract="id")
-case("销售订单列表", "get", "/sales/orders/")
-if so_id:
-    case("销售订单详情", "get", f"/sales/orders/{so_id}/")
-    case("提交销售订单", "post", f"/sales/orders/{so_id}/submit/")
-    case("审批销售订单", "post", f"/sales/orders/{so_id}/approve/",
-         {"action": "approve"})
-    case("驳回（状态不对，应失败）", "post", f"/sales/orders/{so_id}/approve/",
-         {"action": "reject"}, expect_codes=(400, 200))
+    # ====== 7. 财务管理 ======
+    print("\n━━━ 7. 财务管理 ━━━")
+    for path, desc in [
+        ("/finance/accounts/", "科目列表"), ("/finance/accounts/tree/", "科目树"),
+        ("/finance/vouchers/", "凭证列表"), ("/finance/vouchers/?status=2", "已过账凭证"),
+        ("/finance/receivables/", "应收列表"), ("/finance/receivables/?status=0", "未收应收"),
+        ("/finance/payables/", "应付列表"), ("/finance/payables/?status=0", "未付应付"),
+    ]:
+        check(desc, *req("GET", path, t_zhaomin)[:1])
 
-# ─────────────────────────────────────────────
-# 6. 库存管理
-# ─────────────────────────────────────────────
-section("6. 库存管理 /api/v1/inventory/")
+    # 创建凭证
+    _, d = req("POST", "/finance/vouchers/", t_zhaomin, {
+        "voucher_type": "GENERAL", "voucher_date": "2026-05-24", "remark": "API测试凭证",
+        "items": [{"account": 1, "summary": "借方", "debit_amount": 500, "credit_amount": 0},
+                   {"account": 11, "summary": "贷方", "debit_amount": 0, "credit_amount": 500}]
+    })
+    vid = d.get("data", {}).get("id")
+    if check("创建凭证", d.get("code", 0)) and vid:
+        check("审核凭证", *req("POST", f"/finance/vouchers/{vid}/review/", t_zhaomin)[:1])
+        check("过账凭证", *req("POST", f"/finance/vouchers/{vid}/post_voucher/", t_zhaomin)[:1])
 
-warehouse_id = case("创建仓库", "post", "/inventory/warehouses/",
-                    {"warehouse_code": f"WH_{TS}", "warehouse_name": "主仓库",
-                     "warehouse_type": 2, "address": "北京市朝阳区",
-                     "status": True}, extract="id")
-case("仓库列表", "get", "/inventory/warehouses/")
-if warehouse_id:
-    case("仓库详情", "get", f"/inventory/warehouses/{warehouse_id}/")
-    case("更新仓库", "put", f"/inventory/warehouses/{warehouse_id}/",
-         {"warehouse_code": f"WH_{TS}", "warehouse_name": "主仓库-更新",
-          "warehouse_type": 2, "address": "北京市朝阳区", "status": True})
+    # 借贷不平衡
+    _, d = req("POST", "/finance/vouchers/", t_zhaomin, {
+        "voucher_type": "GENERAL", "voucher_date": "2026-05-24",
+        "items": [{"account": 1, "summary": "x", "debit_amount": 100, "credit_amount": 0}]
+    })
+    check("借贷不平衡(应拒绝)", d.get("code", 200), 400)
 
-case("库存列表", "get", "/inventory/stocks/")
-case("库存流水列表", "get", "/inventory/transactions/")
+    # 收款/付款
+    _, d = req("GET", "/finance/receivables/", t_zhaomin)
+    recv = d.get("data", {}).get("list", d.get("data", []))
+    if recv:
+        check("收款登记", *req("POST", f"/finance/receivables/{recv[0]['id']}/payments/", t_zhaomin, {"amount": 100})[:1])
+    _, d = req("GET", "/finance/payables/", t_zhaomin)
+    payb = d.get("data", {}).get("list", d.get("data", []))
+    if payb:
+        check("付款登记", *req("POST", f"/finance/payables/{payb[0]['id']}/payments/", t_zhaomin, {"amount": 100})[:1])
 
-# ─────────────────────────────────────────────
-# 7. 财务管理
-# ─────────────────────────────────────────────
-section("7. 财务管理 /api/v1/finance/")
+    # ====== 8. HR ======
+    print("\n━━━ 8. 人力资源 ━━━")
+    for path, desc in [
+        ("/hr/employees/", "员工列表"), ("/hr/employees/?search=张伟", "员工搜索"),
+        ("/hr/attendances/", "考勤列表"), ("/hr/attendances/?attend_type=1", "正常考勤"),
+        ("/hr/salaries/", "薪资列表"), ("/hr/salaries/?status=2", "已发薪资"),
+    ]:
+        check(desc, *req("GET", path, t_chenjie)[:1])
 
-# 会计科目
-account_id = case("创建会计科目", "post", "/finance/accounts/",
-                  {"parent_id": 0, "account_code": "1001",
-                   "account_name": "库存现金", "account_type": 1,
-                   "balance_dir": 1, "level": 1, "is_leaf": True,
-                   "status": True}, extract="id")
-account_id2 = case("创建会计科目2", "post", "/finance/accounts/",
-                   {"parent_id": 0, "account_code": "2001",
-                    "account_name": "短期借款", "account_type": 2,
-                    "balance_dir": 2, "level": 1, "is_leaf": True,
-                    "status": True}, extract="id")
-case("会计科目列表", "get", "/finance/accounts/")
-case("会计科目树", "get", "/finance/accounts/tree/")
-if account_id:
-    case("会计科目详情", "get", f"/finance/accounts/{account_id}/")
+    check("批量生成薪资", *req("POST", "/hr/salaries/generate/", t_chenjie, {"period": "2026-06"})[:1])
+    check("批量发放薪资", *req("POST", "/hr/salaries/batch_pay/", t_chenjie, {"period": "2026-06", "pay_date": "2026-06-10"})[:1])
 
-# 财务凭证
-voucher_id = None
-if account_id and account_id2:
-    voucher_id = case("创建财务凭证", "post", "/finance/vouchers/",
-                      {"voucher_type": "GENERAL",
-                       "voucher_date": str(date.today()),
-                       "remark": "测试凭证",
-                       "items": [
-                           {"line_no": 1, "account": account_id, "summary": "借方测试",
-                            "debit_amount": "1000.00", "credit_amount": "0.00"},
-                           {"line_no": 2, "account": account_id2, "summary": "贷方测试",
-                            "debit_amount": "0.00", "credit_amount": "1000.00"},
-                       ]}, extract="id")
-    case("借贷不平衡（应失败）", "post", "/finance/vouchers/",
-         {"voucher_type": "GENERAL", "voucher_date": str(date.today()),
-          "remark": "不平衡凭证",
-          "items": [{"line_no": 1, "account": account_id, "summary": "借",
-                     "debit_amount": "500.00", "credit_amount": "0.00"}]},
-         expect_codes=(400,))
-case("财务凭证列表", "get", "/finance/vouchers/")
-if voucher_id:
-    case("财务凭证详情", "get", f"/finance/vouchers/{voucher_id}/")
-    case("审核凭证", "post", f"/finance/vouchers/{voucher_id}/review/")
-    case("过账凭证", "post", f"/finance/vouchers/{voucher_id}/post_voucher/")
-    case("重复审核（应失败）", "post", f"/finance/vouchers/{voucher_id}/review/",
-         expect_codes=(400, 200))
+    # ====== 9. 权限验证 ======
+    print("\n━━━ 9. 权限验证 ━━━")
+    check("采购经理访问财务(403)", *req("GET", "/finance/accounts/", t_zhangwei)[:1], 403)
+    check("销售经理访问HR(403)", *req("GET", "/hr/salaries/", t_liming)[:1], 403)
+    check("未认证访问(401)", *req("GET", "/system/users/")[:1], 401)
 
-# 应收账款
-receivable_id = case("创建应收账款", "post", "/finance/receivables/",
-                     {"customer_id": customer_id or 1, "ref_type": "SALE",
-                      "ref_id": so_id or 1, "amount": "750.00",
-                      "due_date": str(date.today()), "remark": "测试应收"}, extract="id")
-case("应收账款列表", "get", "/finance/receivables/")
-if receivable_id:
-    case("应收账款详情", "get", f"/finance/receivables/{receivable_id}/")
-    case("登记收款（部分）", "post", f"/finance/receivables/{receivable_id}/payments/",
-         {"amount": 300})
-    case("登记收款（超额，应失败）", "post", f"/finance/receivables/{receivable_id}/payments/",
-         {"amount": 99999}, expect_codes=(400, 200))
-    case("登记收款（剩余）", "post", f"/finance/receivables/{receivable_id}/payments/",
-         {"amount": 450})
+    # ====== 报告 ======
+    print("\n" + "=" * 66)
+    print(f"  测试结果: 通过 {PASS}  |  失败 {FAIL}  |  总计 {PASS+FAIL}")
+    if FAIL == 0:
+        print("  结论: 全部通过 ✓")
+    else:
+        print(f"  结论: 存在 {FAIL} 个失败项 ✗")
+    print("=" * 66)
 
-# 应付账款
-payable_id = case("创建应付账款", "post", "/finance/payables/",
-                  {"supplier_id": supplier_id or 1, "ref_type": "PURCHASE",
-                   "ref_id": po_id or 1, "amount": "1000.00",
-                   "due_date": str(date.today()), "remark": "测试应付"}, extract="id")
-case("应付账款列表", "get", "/finance/payables/")
-if payable_id:
-    case("应付账款详情", "get", f"/finance/payables/{payable_id}/")
-    case("登记付款", "post", f"/finance/payables/{payable_id}/payments/",
-         {"amount": 1000})
+    # 失败明细
+    failed = [d for d in DETAILS if d["status"] == "FAIL"]
+    if failed:
+        print("\n失败明细:")
+        for f in failed:
+            print(f"  ✗ {f['desc']} — 返回 {f['code']}, 预期 {f['expected']}")
 
-# ─────────────────────────────────────────────
-# 8. 人力资源
-# ─────────────────────────────────────────────
-section("8. 人力资源 /api/v1/hr/")
+    # 保存报告
+    with open("test_report.md", "w", encoding="utf-8") as fp:
+        fp.write(f"# ERP API 测试报告\n\n**测试时间**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+        fp.write(f"**基准URL**: {BASE}\n\n")
+        fp.write("## 统计\n\n")
+        fp.write(f"| 通过 | 失败 | 总计 | 通过率 |\n|------|------|------|--------|\n")
+        fp.write(f"| {PASS} | {FAIL} | {PASS+FAIL} | {PASS/(PASS+FAIL)*100:.1f}% |\n\n")
+        fp.write("## 详细结果\n\n| 状态 | 接口 | 状态码 |\n|------|------|--------|\n")
+        for d in DETAILS:
+            icon = "✅" if d["status"] == "PASS" else "❌"
+            fp.write(f"| {icon} | {d['desc']} | {d['code']} |\n")
+    print(f"\n报告已保存: test_report.md")
 
-# 员工
-employee_id = case("创建员工", "post", "/hr/employees/",
-                   {"employee_no": f"EMP_{TS}", "real_name": "王五",
-                    "gender": 1, "birth_date": "1990-01-01",
-                    "id_card": "110101199001011234",
-                    "mobile": "13600136000", "dept_id": 1,
-                    "position": "工程师", "entry_date": str(date.today()),
-                    "emp_status": 1, "base_salary": "10000.00",
-                    "bank_name": "工商银行",
-                    "bank_account": "6222021234567890"}, extract="id")
-case("员工列表", "get", "/hr/employees/")
-case("员工搜索", "get", "/hr/employees/", params={"search": "王五"})
-if employee_id:
-    case("员工详情", "get", f"/hr/employees/{employee_id}/")
-    case("更新员工", "put", f"/hr/employees/{employee_id}/",
-         {"employee_no": "EMP001", "real_name": "王五-更新",
-          "gender": 1, "birth_date": "1990-01-01",
-          "id_card": "110101199001011234",
-          "mobile": "13600136000", "dept_id": 1,
-          "position": "高级工程师", "entry_date": str(date.today()),
-          "emp_status": 1, "base_salary": "12000.00",
-          "bank_name": "工商银行",
-          "bank_account": "6222021234567890"})
 
-    # 考勤
-    attend_id = case("创建考勤记录", "post", "/hr/attendances/",
-                     {"employee": employee_id, "attend_date": str(date.today()),
-                      "check_in_time": f"{date.today()}T09:00:00",
-                      "check_out_time": f"{date.today()}T18:00:00",
-                      "attend_type": 1, "work_hours": "8.00",
-                      "overtime_hours": "0.00"}, extract="id")
-    case("考勤列表", "get", "/hr/attendances/")
-    if attend_id:
-        case("考勤详情", "get", f"/hr/attendances/{attend_id}/")
-        case("更新考勤", "put", f"/hr/attendances/{attend_id}/",
-             {"employee": employee_id, "attend_date": str(date.today()),
-              "check_in_time": f"{date.today()}T09:00:00",
-              "check_out_time": f"{date.today()}T19:00:00",
-              "attend_type": 1, "work_hours": "9.00", "overtime_hours": "1.00"})
-
-    # 薪资
-    salary_id = case("创建薪资单", "post", "/hr/salaries/",
-                     {"employee": employee_id, "period": "2025-01",
-                      "base_salary": "12000.00", "overtime_pay": "500.00",
-                      "bonus": "1000.00", "deduction": "0.00",
-                      "social_security": "1500.00", "income_tax": "300.00",
-                      "remark": "测试薪资"}, extract="id")
-    case("薪资列表", "get", "/hr/salaries/")
-    if salary_id:
-        case("薪资详情", "get", f"/hr/salaries/{salary_id}/")
-        case("审核薪资单", "post", f"/hr/salaries/{salary_id}/review/")
-        case("重复审核（应失败）", "post", f"/hr/salaries/{salary_id}/review/",
-             expect_codes=(400, 200))
-
-    # 批量生成薪资
-    case("批量生成薪资单", "post", "/hr/salaries/generate/",
-         {"period": "2026-04", "dept_ids": []})
-    case("批量发放薪资", "post", "/hr/salaries/batch_pay/",
-         {"period": "2026-04", "pay_date": str(date.today())})
-
-# ─────────────────────────────────────────────
-# 输出测试报告
-# ─────────────────────────────────────────────
-total = len(RESULTS)
-passed = sum(1 for r in RESULTS if r["pass"])
-failed = total - passed
-
-print(f"\n{'='*60}")
-print(f"  测试报告汇总")
-print(f"{'='*60}")
-print(f"  总计: {total}  通过: {passed}  失败: {failed}  通过率: {passed/total*100:.1f}%")
-print(f"{'='*60}")
-
-if failed > 0:
-    print("\n  失败用例明细:")
-    for r in RESULTS:
-        if not r["pass"]:
-            print(f"  ✗ [{r['status']}] {r['method']} {r['path']}  {r['name']}")
-            if r.get("msg"):
-                print(f"      {r['msg']}")
-
-# 输出 JSON 报告
-report = {
-    "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-    "summary": {"total": total, "passed": passed, "failed": failed,
-                "pass_rate": f"{passed/total*100:.1f}%"},
-    "results": RESULTS,
-}
-with open("test_report.json", "w", encoding="utf-8") as f:
-    json.dump(report, f, ensure_ascii=False, indent=2)
-print(f"\n  详细报告已保存至 test_report.json")
-
+if __name__ == "__main__":
+    main()

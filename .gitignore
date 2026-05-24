@@ -31,3 +31,6 @@ dist/
 
 # Test artifacts
 test_report.json
+
+# claude
+.claude 

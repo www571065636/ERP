@@ -205,18 +205,21 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
                 order_item.received_qty = new_received
                 order_item.save(update_fields=["received_qty"])
                 total_received += new_received
-                adjust_stock(
-                    warehouse_id=receipt.warehouse_id,
-                    product_id=item.product_id,
-                    sku_id=item.sku_id,
-                    qty_delta=item.qty,
-                    unit_cost=order_item.unit_price,
-                    operator_id=request.user.id,
-                    txn_type="PURCHASE_IN",
-                    ref_type="PURCHASE_RECEIPT",
-                    ref_id=receipt.id,
-                    remark=f"采购收货 {receipt.receipt_no}",
-                )
+                try:
+                    adjust_stock(
+                        warehouse_id=receipt.warehouse_id,
+                        product_id=item.product_id,
+                        sku_id=item.sku_id,
+                        qty_delta=item.qty,
+                        unit_cost=order_item.unit_price,
+                        operator_id=request.user.id,
+                        txn_type="PURCHASE_IN",
+                        ref_type="PURCHASE_RECEIPT",
+                        ref_id=receipt.id,
+                        remark=f"采购收货 {receipt.receipt_no}",
+                    )
+                except ValueError as e:
+                    raise drf_serializers.ValidationError(str(e))
 
             total_order_qty = quantize_qty(order.total_qty)
             order.status = 4 if total_received >= total_order_qty else 3

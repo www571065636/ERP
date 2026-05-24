@@ -206,18 +206,21 @@ class SalesOrderViewSet(viewsets.ModelViewSet):
                 new_delivered = quantize_qty(order_item.delivered_qty) + quantize_qty(item.qty)
                 if new_delivered > quantize_qty(order_item.qty):
                     return fail(f"明细 {order_item.line_no} 累计发货数量超限")
-                adjust_stock(
-                    warehouse_id=delivery.warehouse_id,
-                    product_id=item.product_id,
-                    sku_id=item.sku_id,
-                    qty_delta=-quantize_qty(item.qty),
-                    unit_cost=order_item.unit_price,
-                    operator_id=request.user.id,
-                    txn_type="SALE_OUT",
-                    ref_type="SALES_DELIVERY",
-                    ref_id=delivery.id,
-                    remark=f"销售发货 {delivery.delivery_no}",
-                )
+                try:
+                    adjust_stock(
+                        warehouse_id=delivery.warehouse_id,
+                        product_id=item.product_id,
+                        sku_id=item.sku_id,
+                        qty_delta=-quantize_qty(item.qty),
+                        unit_cost=order_item.unit_price,
+                        operator_id=request.user.id,
+                        txn_type="SALE_OUT",
+                        ref_type="SALES_DELIVERY",
+                        ref_id=delivery.id,
+                        remark=f"销售发货 {delivery.delivery_no}",
+                    )
+                except ValueError as e:
+                    raise drf_serializers.ValidationError(str(e))
                 order_item.delivered_qty = new_delivered
                 order_item.save(update_fields=["delivered_qty"])
                 total_delivered += new_delivered

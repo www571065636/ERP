@@ -50,7 +50,7 @@ class VoucherItem(models.Model):
     voucher = models.ForeignKey(Voucher, on_delete=models.CASCADE, related_name="items")
     line_no = models.IntegerField()
     account = models.ForeignKey(Account, on_delete=models.PROTECT)
-    summary = models.CharField(max_length=255)
+    summary = models.CharField(max_length=255, blank=True, default="")
     debit_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
     credit_amount = models.DecimalField(max_digits=15, decimal_places=2, default=0)
 

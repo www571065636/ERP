@@ -57,7 +57,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200" fixed="right" align="center">
+        <el-table-column label="操作" width="280" fixed="right" align="center">
           <template #default="{ row }">
             <div class="action-btns">
               <el-button text type="primary" size="small" @click="viewDetail(row)">查看</el-button>
@@ -280,14 +280,14 @@ async function editOrder(row) {
   await loadOptions()
   const res = await http.get(`/purchase/orders/${row.id}/`)
   form.value = {
-    id: res.data.id,
-    supplier: res.data.supplier,
-    warehouse_id: res.data.warehouse_id,
-    order_date: res.data.order_date,
-    expected_date: res.data.expected_date,
-    currency: res.data.currency || 'CNY',
-    remark: res.data.remark,
-    items: (res.data.items || []).map(item => ({
+    id: res.id,
+    supplier: res.supplier,
+    warehouse_id: res.warehouse_id,
+    order_date: res.order_date,
+    expected_date: res.expected_date,
+    currency: res.currency || 'CNY',
+    remark: res.remark,
+    items: (res.items || []).map(item => ({
       id: item.id,
       product_id: item.product_id,
       sku_id: item.sku_id,
@@ -308,7 +308,7 @@ function viewDetail(row) {
   form.value = { ...row, items: row.items || [] }
   dialogVisible.value = true
   if (!row.items) {
-    http.get(`/purchase/orders/${row.id}/`).then(res => { form.value = res.data })
+    http.get(`/purchase/orders/${row.id}/`).then(res => { form.value = res })
   }
 }
 
@@ -377,7 +377,7 @@ async function submitOrder(row) {
 
 async function approveOrder(row) {
   await ElMessageBox.confirm('确认审批通过？', '审批', { type: 'warning' })
-  await http.post(`/purchase/orders/${row.id}/approve/`)
+  await http.post(`/purchase/orders/${row.id}/approve/`, { action: 'approve' })
   ElMessage.success('审批成功')
   loadData()
 }
@@ -391,8 +391,8 @@ async function handleDelete(row) {
 
 async function openReceiptDialog(row) {
   const res = await http.get(`/purchase/orders/${row.id}/`)
-  currentReceiptOrder.value = res.data
-  receiptItems.value = (res.data.items || []).map(item => ({
+  currentReceiptOrder.value = res
+  receiptItems.value = (res.items || []).map(item => ({
     ...item,
     product_name: products.value.find(p => p.id === item.product_id)?.product_name || `产品#${item.product_id}`,
     remaining_qty: Math.max(Number(item.qty) - Number(item.received_qty || 0), 0),

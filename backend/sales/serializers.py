@@ -25,7 +25,7 @@ class SalesOrderItemSerializer(drf_serializers.ModelSerializer):
         fields = ["id", "line_no", "product_id", "product_code", "product_name",
                   "sku_id", "unit_id", "qty", "unit_price", "tax_rate",
                   "tax_amount", "amount", "delivered_qty", "remark"]
-        read_only_fields = ["id", "line_no", "delivered_qty", "product_code", "product_name"]
+        read_only_fields = ["id", "line_no", "delivered_qty", "product_code", "product_name", "amount", "tax_amount"]
 
     def get_product_name(self, obj):
         return self.context.get("product_map", {}).get(obj.product_id, {}).get("product_name", "")
@@ -84,7 +84,8 @@ class SalesOrderWriteSerializer(drf_serializers.ModelSerializer):
 
     class Meta:
         model = SalesOrder
-        fields = ["customer", "warehouse_id", "order_date", "delivery_date", "currency", "remark", "items"]
+        fields = ["id", "order_no", "customer", "warehouse_id", "order_date", "delivery_date", "currency", "remark", "items"]
+        read_only_fields = ["id", "order_no"]
 
     def validate_items(self, items):
         if not items:

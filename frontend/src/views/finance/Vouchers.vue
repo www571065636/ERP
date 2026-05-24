@@ -148,7 +148,7 @@
               <span v-else>{{ row.credit_amount > 0 ? row.credit_amount : '' }}</span>
             </template>
           </el-table-column>
-          <el-table-column v-if="!viewMode" label="" width="50">
+          <el-table-column v-if="!viewMode" label="删除" width="60">
             <template #default="{ $index }">
               <el-button text type="danger" size="small" @click="form.items.splice($index, 1)">
                 <el-icon><Delete /></el-icon>
@@ -241,7 +241,7 @@ function viewDetail(row) {
   form.value = { ...row, items: row.items || [] }
   dialogVisible.value = true
   if (!row.items?.length) {
-    http.get(`/finance/vouchers/${row.id}/`).then(res => { form.value = res.data })
+    http.get(`/finance/vouchers/${row.id}/`).then(res => { form.value = res })
   }
 }
 
